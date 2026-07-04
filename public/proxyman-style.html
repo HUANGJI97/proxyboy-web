@@ -31,6 +31,84 @@
             color: #569cd6;
             margin-right: 20px;
         }
+        
+        /* 代理服务状态 */
+        .proxy-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.running {
+            background: #4ec9b0;
+            box-shadow: 0 0 8px #4ec9b0;
+        }
+        
+        .status-dot.stopped {
+            background: #f44747;
+            box-shadow: 0 0 8px #f44747;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .proxy-actions {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .btn-proxy {
+            padding: 4px 10px;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-start {
+            background: #4ec9b0;
+            color: #1e1e1e;
+        }
+        
+        .btn-start:hover {
+            background: #3db39a;
+        }
+        
+        .btn-stop {
+            background: #f44747;
+            color: white;
+        }
+        
+        .btn-stop:hover {
+            background: #d43a3a;
+        }
+        
+        .btn-proxy:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
         .search-box {
             flex: 1;
             max-width: 500px;
@@ -506,7 +584,7 @@
         async function loadLogs() {
             try {
                 // 只加载最近 100 条，避免页面卡死
-                const res = await fetch('/api/logs?limit=100');
+                const res = await fetch('/admin/api/logs?limit=100');
                 const data = await res.json();
                 logs = data.logs || [];
                 renderList();
@@ -846,7 +924,7 @@
             if (!confirm('Clear all logs?')) return;
             
             try {
-                await fetch('/api/logs/clear', { method: 'POST' });
+                await fetch('/admin/api/logs/clear', { method: 'POST' });
                 logs = [];
                 selectedIndex = -1;
                 renderList();

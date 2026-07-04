@@ -1,190 +1,172 @@
-# HTTP/HTTPS 代理抓包服务
+# ProxySniffer
 
-一个基于 Node.js 的 HTTP/HTTPS 代理服务器，支持流量抓包和解密。
+HTTP/HTTPS 代理服务，支持抓包、解密和 Web 管理界面。
 
-## 功能特性
+## 🚀 快速开始
 
-- ✅ HTTP 请求转发与抓包
-- ✅ HTTPS 请求 MITM 解密
-- ✅ 自动生成 CA 证书
-- ✅ 请求/响应日志记录
-- ✅ 支持 Systemd 服务管理
-
-## 快速开始
-
-### 1. 安装依赖
-
-```bash
-cd /home/ubuntu/.openclaw/workspace/proxy-server
-chmod +x install.sh
-./install.sh
-```
-
-或手动安装：
-
+### 安装依赖
 ```bash
 npm install
-node server.js gen-ca  # 生成 CA 证书
 ```
 
-### 2. 启动服务
-
+### 开发模式（前台运行，热更新）
 ```bash
-# 前台运行（调试）
-node server.js start -p 8080
-
-# 后台服务
-sudo systemctl start proxy-sniffer
+npm run dev
 ```
+- ✅ 前台运行，终端关闭自动停止
+- ✅ 热更新：修改文件自动重启
+- ✅ 适合开发调试
 
-### 3. 客户端配置
-
-#### 3.1 下载 CA 证书
-
-CA 证书位置：`certs/ca.crt`
-
+### 生产模式（后台运行）
 ```bash
-# 启动 HTTP 服务器供下载
-cd certs && python3 -m http.server 8888 &
-# 然后访问 http://<服务器IP>:8888/ca.crt
+npm start
 ```
+- ✅ 后台运行，终端关闭不停止
+- ✅ 日志输出到 `/tmp/proxy-sniffer.log`
+- ✅ 适合生产环境
 
-#### 3.2 安装 CA 证书
+---
 
-**Windows:**
-1. 双击 `ca.crt`
-2. 点击 "安装证书"
-3. 选择 "当前用户" 或 "本地计算机"
-4. 选择 "将所有证书放入下列存储"
-5. 选择 "受信任的根证书颁发机构"
-6. 完成安装
+## 📋 所有可用命令
 
-**macOS:**
+### 开发模式（前台 + 热更新）
+| 命令 | 说明 |
+|------|------|
+| `npm run dev` | 启动所有服务（代理 + Web） |
+| `npm run dev:proxy` | 只启动代理服务（8888） |
+| `npm run dev:web` | 只启动 Web 服务（8080） |
+
+### 生产模式（后台）
+| 命令 | 说明 |
+|------|------|
+| `npm start` | 启动所有服务（后台） |
+| `npm run start:proxy` | 只启动代理服务（后台） |
+| `npm run start:web` | 只启动 Web 服务（后台） |
+
+### 停止服务
 ```bash
-sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ca.crt
+npm run stop
 ```
 
-**Android:**
-1. 设置 → 安全 → 加密与凭据 → 安装证书 → CA 证书
-2. 选择 `ca.crt`
+---
 
-**iOS:**
-1. 通过 AirDrop/邮件发送 `ca.crt`
-2. 设置 → 已下载的描述文件 → 安装
-3. 设置 → 通用 → 关于本机 → 证书信任设置 → 开启完全信任
+## 🌐 访问地址
 
-**Firefox (独立证书存储):**
-1. 设置 → 隐私与安全 → 证书 → 查看证书
-2. 导入 → 选择 `ca.crt` → 勾选 "信任此 CA 来标识网站"
+启动后访问：
 
-#### 3.3 设置代理
+```
+Web 管理界面：http://115.159.196.184:8080/admin.html
+证书下载页面：http://115.159.196.184:8080/cert
+代理服务地址：115.159.196.184:8888
+```
 
-**Windows (IE/Chrome):**
-设置 → 代理设置 → 手动设置代理
-- 地址：<服务器IP>
-- 端口：8080
+---
 
-**macOS:**
-系统设置 → 网络 → 高级 → 代理 → 网页代理(HTTP) / 安全网页代理(HTTPS)
-- 服务器：<服务器IP>
-- 端口：8080
+## 🔧 开发说明
 
-**Android:**
-长按 WiFi → 修改网络 → 高级选项 → 代理 → 手动
-- 代理服务器：<服务器IP>
-- 端口：8080
+### 热更新
+使用 `nodemon` 实现热更新：
+- 修改 `proxy-only.js` → 自动重启代理服务
+- 修改 `web-only-v2.js` → 自动重启 Web 服务
+- 修改 `public/` → 自动重启 Web 服务
 
-**iOS:**
-设置 → WiFi → 点击 i 图标 → 配置代理 → 手动
-- 服务器：<服务器IP>
-- 端口：8080
-
-## 使用方法
-
-### 命令行
-
+### 查看日志
 ```bash
-# 启动代理（默认端口 8080）
-node server.js start
+# 开发模式（前台）
+# 直接看终端输出
 
-# 指定端口
-node server.js start -p 8888
-
-# 生成 CA 证书
-node server.js gen-ca
-
-# 查看 CA 证书信息
-node server.js show-ca
+# 生产模式（后台）
+tail -f /tmp/proxy-sniffer.log  # 所有服务
+tail -f /tmp/proxy.log         # 代理服务
+tail -f /tmp/web.log           # Web 服务
 ```
 
-### 查看抓包日志
+---
 
-日志保存在 `logs/capture-YYYY-MM-DD.json`：
-
-```bash
-# 实时查看日志
-tail -f logs/capture-$(date +%Y-%m-%d).json
-
-# 格式化查看
-cat logs/capture-2026-07-04.json | jq .
-```
-
-## 目录结构
+## 📁 项目结构
 
 ```
 proxy-server/
-├── server.js           # 主服务程序
-├── package.json       # 依赖配置
-├── install.sh         # 安装脚本
-├── certs/            # 证书目录
-│   ├── ca.key        # CA 私钥
-│   └── ca.crt        # CA 证书
-├── logs/             # 抓包日志
-│   └── capture-*.json
-└── README.md         # 本文件
+├── proxy-only.js        # 代理服务（端口 8888）
+├── web-only-v2.js       # Web 管理服务（端口 8080）
+├── server-single-port.js # 单端口版本（8080）
+├── public/
+│   ├── admin.html          # 管理界面（带代理服务状态）
+│   ├── proxyman-style.html # Proxyman 风格界面
+│   └── service-manager.html # 服务管理界面
+├── certs/
+│   ├── ca.crt            # CA 证书（公钥）
+│   └── ca.key            # CA 私钥（不要提交）
+├── logs/
+│   └── capture-*.json   # 抓包日志
+├── package.json
+└── README.md
 ```
 
-## 注意事项
+---
 
-⚠️ **安全警告：**
-1. 此工具仅用于合法授权的安全测试
-2. 不要在生产环境未经授权使用
-3. CA 私钥请妥善保管，不要泄露
-4. 客户端安装 CA 证书后，代理可以解密所有 HTTPS 流量
+## ⚠️ 注意事项
 
-## 故障排查
+1. **首次使用** 需要生成 CA 证书：
+   - 启动服务会自动生成 `certs/ca.key` 和 `certs/ca.crt`
+   - 客户端需要安装 `certs/ca.crt` 并信任
 
-### 证书不受信任
-- 确认 CA 证书已正确安装到客户端信任区
-- 检查系统时间和证书有效期
+2. **`certs/ca.key` 不要提交到 Git**
+   - 已加入 `.gitignore`
 
-### 无法捕获 HTTPS
-- 确认客户端已设置代理
-- 确认 CA 证书已安装并信任
-- 检查防火墙是否阻止 8080 端口
+3. **端口占用**
+   - 8080：Web 管理服务
+   - 8888：代理服务
+   - 确保这些端口未被占用
 
-### 连接超时
+---
+
+## 🐛 常见问题
+
+### 端口被占用
 ```bash
-# 检查服务状态
-sudo systemctl status proxy-sniffer
+# 查看端口占用
+netstat -tlnp | grep -E "8080|8888"
 
-# 检查端口监听
-netstat -tlnp | grep 8080
+# 停止服务
+npm run stop
 ```
 
-## 开发调试
-
+### 热更新不生效
 ```bash
-# 前台运行查看详细日志
-node server.js start
+# 确保 nodemon 已安装
+npm install -g nodemon
 
-# 使用 curl 测试
-export http_proxy=http://127.0.0.1:8080
-export https_proxy=http://127.0.0.1:8080
-curl -v http://example.com
-curl -vk https://example.com
+# 检查 nodemon 版本
+nodemon --version
 ```
 
-## 许可证
+### 日志文件过大
+```bash
+# 清空日志
+echo > /tmp/proxy-sniffer.log
+echo > /tmp/proxy.log
+echo > /tmp/web.log
+```
+
+---
+
+## 📝 更新日志
+
+### v1.0.0 (2026-07-05)
+- ✅ 实现 HTTP/HTTPS 代理抓包
+- ✅ 实现 Web 管理界面
+- ✅ 实现证书下载页面
+- ✅ 实现代理服务状态检测和控制
+- ✅ 实现热更新（开发模式）
+- ✅ 实现后台运行（生产模式）
+
+---
+
+## 📄 许可证
 
 MIT License
+
+---
+
+**Happy Debugging! 🎉**

@@ -4,14 +4,20 @@
   "description": "HTTP/HTTPS proxy with packet capture and decryption",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "gen-ca": "node scripts/generate-ca.js"
+    "dev": "nodemon --watch web-express.js --watch public/ --watch certs/ web-express.js",
+    "start": "nohup node web-express.js > /tmp/web.log 2>&1 &",
+    "dev:proxy": "nodemon --watch proxy-only.js proxy-only.js",
+    "dev:web": "nodemon --watch web-express.js --watch public/ web-express.js",
+    "start:proxy": "nohup node proxy-only.js > /tmp/proxy.log 2>&1 &",
+    "start:web": "nohup node web-express.js > /tmp/web.log 2>&1 &",
+    "stop": "pkill -f 'node.*proxy-only|node.*web-express' || echo 'No services running'"
   },
   "dependencies": {
+    "commander": "^11.1.0",
+    "express": "^5.2.1",
     "http-proxy": "^1.18.1",
     "https": "^1.0.0",
-    "node-forge": "^1.3.1",
-    "commander": "^11.1.0"
+    "node-forge": "^1.3.1"
   },
   "engines": {
     "node": ">=18.0.0"
