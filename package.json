@@ -4,13 +4,13 @@
   "description": "HTTP/HTTPS proxy with packet capture and decryption",
   "main": "server.js",
   "scripts": {
-    "dev": "nodemon --watch web-express.js --watch public/ --watch certs/ web-express.js",
-    "start": "nohup node web-express.js > /tmp/web.log 2>&1 &",
+    "dev": "nodemon --watch server-express.js --watch public/ --watch certs/ server-express.js",
+    "start": "nohup node server-express.js > /tmp/web.log 2>&1 &",
     "dev:proxy": "nodemon --watch proxy-only.js proxy-only.js",
-    "dev:web": "nodemon --watch web-express.js --watch public/ web-express.js",
+    "dev:web": "nodemon --watch server-express.js --watch public/ server-express.js",
     "start:proxy": "nohup node proxy-only.js > /tmp/proxy.log 2>&1 &",
-    "start:web": "nohup node web-express.js > /tmp/web.log 2>&1 &",
-    "stop": "pkill -f 'node.*proxy-only|node.*web-express' || echo 'No services running'"
+    "start:web": "nohup node server-express.js > /tmp/web.log 2>&1 &",
+    "stop": "pkill -f 'node.*proxy-only|node.*server-express' || echo 'No services running'"
   },
   "dependencies": {
     "commander": "^11.1.0",

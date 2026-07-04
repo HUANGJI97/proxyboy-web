@@ -4,8 +4,10 @@ const https = require('https');
 const net = require('net');
 const fs = require('fs');
 const path = require('path');
-const { generateKeyPair, Certificate } = require('node-forge');
+const forge = require('node-forge');
 const { exec, execSync, spawn } = require('child_process');
+
+const os = require('os');
 
 const CONFIG = {
   webPort: 8080,
@@ -31,16 +33,16 @@ function initCA() {
       certificate: fs.readFileSync(CONFIG.caCertPath, 'utf8')
     };
   }
-  
+
   console.log('生成新的 CA 证书...');
-  const keys = generateKeyPair({ bits: 2048 });
-  const cert = new Certificate();
+  const keys = forge.pki.rsa.generateKeyPair(2048);
+  const cert = forge.pki.createCertificate();
   cert.publicKey = keys.publicKey;
   cert.serialNumber = '01';
   cert.validity.notBefore = new Date();
   cert.validity.notAfter = new Date();
   cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 10);
-  
+
   const attrs = [
     { name: 'commonName', value: 'ProxySniffer CA' },
     { name: 'countryName', value: 'CN' },
@@ -52,15 +54,15 @@ function initCA() {
     { name: 'basicConstraints', cA: true },
     { name: 'keyUsage', keyCertSign: true, digitalSignature: true, keyEncipherment: true }
   ]);
-  
-  cert.sign(keys.privateKey, 'SHA256');
-  
-  const privateKeyPem = generateKeyPair.exportKey(keys.privateKey, 'pem');
-  const certPem = Certificate.exportCertificate(cert, 'pem');
-  
+
+  cert.sign(keys.privateKey, forge.md.sha256.create());
+
+  const privateKeyPem = forge.pki.privateKeyToPem(keys.privateKey);
+  const certPem = forge.pki.certificateToPem(cert);
+
   fs.writeFileSync(CONFIG.caKeyPath, privateKeyPem);
   fs.writeFileSync(CONFIG.caCertPath, certPem);
-  
+
   console.log('CA 证书生成完成');
   return { privateKey: privateKeyPem, certificate: certPem };
 }
@@ -72,12 +74,12 @@ function saveCaptureLog(data) {
   try {
     const today = new Date().toISOString().split('T')[0];
     const logFile = path.join(CONFIG.logsDir, `capture-${today}.json`);
-    
+
     let logs = [];
     if (fs.existsSync(logFile)) {
       logs = JSON.parse(fs.readFileSync(logFile, 'utf8'));
     }
-    
+
     logs.push(data);
     fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
   } catch (e) {
@@ -92,11 +94,11 @@ function getCaptureLogs(limit = 100) {
       .filter(f => f.startsWith('capture-') && f.endsWith('.json'))
       .sort()
       .reverse();
-    
+
     let allLogs = [];
     for (const file of files) {
       if (allLogs.length >= limit) break;
-      
+
       const filepath = path.join(CONFIG.logsDir, file);
       try {
         const content = fs.readFileSync(filepath, 'utf8');
@@ -113,7 +115,7 @@ function getCaptureLogs(limit = 100) {
         if (CONFIG.debug) console.error(`读取日志文件失败: ${file}`, e);
       }
     }
-    
+
     return allLogs.slice(0, limit);
   } catch (e) {
     if (CONFIG.debug) console.error('读取日志目录失败:', e);
@@ -148,21 +150,53 @@ webApp.post('/admin/api/logs/clear', (req, res) => {
   }
 });
 
-// API: 获取服务状态
-webApp.get('/admin/api/service/status', (req, res) => {
+// 检测端口是否在监听
+function checkPort(port) {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    socket.setTimeout(1000);
+    socket.on('connect', () => { socket.destroy(); resolve(true); });
+    socket.on('error', () => resolve(false));
+    socket.on('timeout', () => { socket.destroy(); resolve(false); });
+    socket.connect(port, '127.0.0.1');
+  });
+}
+
+// 获取本机局域网 IP
+function getLanIPs() {
+  const interfaces = os.networkInterfaces();
+  const ips = [];
+  for (const [name, addrs] of Object.entries(interfaces)) {
+    if (!addrs) continue;
+    for (const addr of addrs) {
+      // 跳过内部地址和非 IPv4
+      if (addr.family === 'IPv4' && !addr.internal) {
+        ips.push({ interface: name, address: addr.address });
+      }
+    }
+  }
+  return ips;
+}
+
+// API: 获取网络信息
+webApp.get('/admin/api/service/network', (req, res) => {
   try {
-    let webRunning = false;
-    try {
-      execSync('netstat -tlnp 2>/dev/null | grep :8080 || ss -tlnp 2>/dev/null | grep :8080', { stdio: 'pipe' });
-      webRunning = true;
-    } catch (e) {}
-    
-    let proxyRunning = false;
-    try {
-      execSync('netstat -tlnp 2>/dev/null | grep :8888 || ss -tlnp 2>/dev/null | grep :8888', { stdio: 'pipe' });
-      proxyRunning = true;
-    } catch (e) {}
-    
+    const hostname = os.hostname();
+    const ips = getLanIPs();
+    res.json({ hostname, ips });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// API: 获取服务状态
+webApp.get('/admin/api/service/status', async (req, res) => {
+  try {
+    const [webRunning, proxyRunning] = await Promise.all([
+      checkPort(8080),
+      checkPort(8888)
+    ]);
+
     res.json({
       web: { running: webRunning, port: 8080 },
       proxy: { running: proxyRunning, port: 8888 }
@@ -174,16 +208,45 @@ webApp.get('/admin/api/service/status', (req, res) => {
 
 // API: 启动代理服务
 webApp.post('/admin/api/service/proxy/start', (req, res) => {
+  console.log('[API] 收到启动代理服务请求');
   try {
+    console.log("启动代理服务")
     const proc = spawn('node', ['proxy-only.js'], {
       cwd: __dirname,
       detached: true,
-      stdio: 'ignore'
+      stdio: ['ignore', 'pipe', 'pipe']
     });
+
+    let stderr = '';
+    proc.stderr.on('data', (data) => {
+      const msg = data.toString();
+      stderr += msg;
+      console.error(`[proxy-only stderr] ${msg.trim()}`);
+    });
+
+    proc.stdout.on('data', (data) => {
+      console.log(`[proxy-only stdout] ${data.toString().trim()}`);
+    });
+
+    proc.on('error', (err) => {
+      console.error(`[API] spawn 进程失败: ${err.message}`);
+    });
+
+    proc.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`[API] 代理进程异常退出，退出码: ${code}${stderr ? ', stderr: ' + stderr.trim() : ''}`);
+      } else {
+        console.log(`[API] 代理进程正常退出，退出码: 0`);
+      }
+    });
+
     proc.unref();
-    
-    res.json({ success: true, message: '代理服务启动中...' });
+
+    const now = new Date().toISOString();
+    console.log(`[API] 代理服务已启动 | PID: ${proc.pid} | 时间: ${now}`);
+    res.json({ success: true, message: '代理服务启动中...', pid: proc.pid });
   } catch (e) {
+    console.error(`[API] 启动代理服务失败: ${e.message}`);
     res.status(500).json({ success: false, error: e.message });
   }
 });
@@ -221,98 +284,28 @@ webApp.get('/cert/ca.crt', (req, res) => {
 // 启动 Web 服务
 const webServer = http.createServer(webApp);
 webServer.listen(CONFIG.webPort, '0.0.0.0', () => {
+  const ips = getLanIPs();
+  const primaryIP = ips.length > 0 ? ips[0].address : 'localhost';
+
   console.log(`Web 管理服务启动成功！`);
   console.log(`监听端口: ${CONFIG.webPort}`);
+  console.log(`主机名: ${os.hostname()}`);
+  console.log(`网卡 IP:`);
+  ips.forEach(({ interface: iface, address }) => {
+    console.log(`  ${iface}: ${address}`);
+  });
   console.log(`\n访问地址:`);
-  console.log(`  Web 管理: http://115.159.196.184:${CONFIG.webPort}/admin`);
-  console.log(`  服务管理: http://115.159.196.184:${CONFIG.webPort}/manager`);
-  console.log(`  证书下载: http://115.159.196.184:${CONFIG.webPort}/cert`);
+  console.log(`  Web 管理: http://${primaryIP}:${CONFIG.webPort}/admin`);
+  console.log(`  服务管理: http://${primaryIP}:${CONFIG.webPort}/manager`);
+  console.log(`  证书下载: http://${primaryIP}:${CONFIG.webPort}/cert`);
   console.log(`\n按 Ctrl+C 停止服务`);
-});
-
-// ===== 代理服务（端口 8888）=====
-const proxyServer = http.createServer((req, res) => {
-  let fullUrl = req.url;
-  if (!fullUrl.startsWith('http')) {
-    const host = req.headers.host || 'localhost';
-    fullUrl = `http://${host}${req.url}`;
-  }
-  const parsedUrl = new URL(fullUrl);
-  
-  if (CONFIG.debug) console.log(`HTTP: ${req.method} ${fullUrl}`);
-  
-  const options = {
-    hostname: parsedUrl.hostname,
-    port: parsedUrl.port || 80,
-    path: parsedUrl.pathname + parsedUrl.search,
-    method: req.method,
-    headers: req.headers,
-  };
-  
-  const proxyReq = http.request(options, (proxyRes) => {
-    res.writeHead(proxyRes.statusCode, proxyRes.headers);
-    proxyRes.pipe(res);
-    
-    let responseBody = '';
-    proxyRes.on('data', chunk => responseBody += chunk);
-    proxyRes.on('end', () => {
-      saveCaptureLog({
-        type: 'http',
-        method: req.method,
-        url: fullUrl,
-        requestHeaders: req.headers,
-        responseStatus: proxyRes.statusCode,
-        responseHeaders: proxyRes.headers,
-        responseBody: responseBody.substring(0, 10000),
-        timestamp: new Date().toISOString(),
-      });
-    });
-  });
-  
-  req.pipe(proxyReq);
-  
-  proxyReq.on('error', (e) => {
-    if (CONFIG.debug) console.error('代理请求失败:', e);
-    res.writeHead(500);
-    res.end('Proxy Error');
-  });
-});
-
-// HTTPS MITM 拦截
-proxyServer.on('connect', (req, clientSocket, head) => {
-  const [host, port] = req.url.split(':');
-  
-  if (CONFIG.debug) console.log(`HTTPS CONNECT: ${host}:${port}`);
-  
-  const serverSocket = net.connect(port || 443, host, () => {
-    clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-    serverSocket.write(head);
-    serverSocket.pipe(clientSocket);
-    clientSocket.pipe(serverSocket);
-  });
-  
-  serverSocket.on('error', (e) => {
-    if (CONFIG.debug) console.error('HTTPS 连接失败:', e);
-    clientSocket.end();
-  });
-});
-
-// 启动代理服务
-proxyServer.listen(CONFIG.proxyPort, '0.0.0.0', () => {
-  console.log(`代理服务启动成功！`);
-  console.log(`监听端口: ${CONFIG.proxyPort}`);
-  console.log(`\n客户端配置:`);
-  console.log(`1. 设置代理: 115.159.196.184:${CONFIG.proxyPort}`);
-  console.log(`2. 安装 CA 证书: ${CONFIG.caCertPath}`);
 });
 
 // 优雅退出
 process.on('SIGINT', () => {
   console.log('\n正在停止服务...');
   webServer.close(() => {
-    proxyServer.close(() => {
-      console.log('服务已停止');
-      process.exit(0);
-    });
+    console.log('Web 服务已停止');
+    process.exit(0);
   });
 });
