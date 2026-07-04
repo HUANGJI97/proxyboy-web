@@ -39,3 +39,6 @@ coverage/
 *.tmp
 *.bak
 *.bak2
+
+# 确保 CA 私钥不会被提交
+certs/ca.key
