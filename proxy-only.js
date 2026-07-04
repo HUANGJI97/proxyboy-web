@@ -139,6 +139,14 @@ function saveCaptureLog(data) {
   }
 }
 
+// 获取客户端信息
+function getClientInfo(req) {
+  const ip = req.socket?.remoteAddress || req.connection?.remoteAddress || '?';
+  const port = req.socket?.remotePort || req.connection?.remotePort || '?';
+  const ua = (req.headers['user-agent'] || '').substring(0, 60);
+  return { ip, port, ua };
+}
+
 // 创建代理服务器
 const proxyServer = http.createServer((req, res) => {
   let fullUrl = req.url;
@@ -168,7 +176,8 @@ const proxyServer = http.createServer((req, res) => {
   
     const proxyReq = http.request(options, (proxyRes) => {
     const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
-    console.log(`[${time}] ${req.method} ${fullUrl} → ${proxyRes.statusCode}`);
+    const client = getClientInfo(req);
+    console.log(`[${time}] ${client.ip}:${client.port} | ${req.method} ${fullUrl} → ${proxyRes.statusCode}`);
     
     res.writeHead(proxyRes.statusCode, proxyRes.headers);
     proxyRes.pipe(res);
@@ -183,9 +192,11 @@ const proxyServer = http.createServer((req, res) => {
     proxyRes.on('end', () => {
       saveCaptureLog({
         type: 'http',
+        clientIP: client.ip,
         method: req.method,
         url: fullUrl,
         requestHeaders: req.headers,
+        requestBody: requestBody.substring(0, 10000),
         responseStatus: proxyRes.statusCode,
         responseHeaders: proxyRes.headers,
         responseBody: responseBody.substring(0, 10000),
@@ -194,6 +205,11 @@ const proxyServer = http.createServer((req, res) => {
     });
   });
   
+  // 收集请求体
+  let requestBody = '';
+  req.on('data', chunk => {
+    if (requestBody.length < 10000) requestBody += chunk.toString();
+  });
   req.pipe(proxyReq);
   
   proxyReq.on('error', (e) => {
@@ -211,7 +227,8 @@ proxyServer.on('connect', (req, clientSocket, head) => {
   const [host, port] = req.url.split(':');
   const targetPort = parseInt(port) || 443;
   const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
-  console.log(`[${time}] MITM ${host}:${targetPort}`);
+  const clientIP = clientSocket.remoteAddress || '?';
+  console.log(`[${time}] ${clientIP} | MITM ${host}:${targetPort}`);
 
   clientSocket.on('error', (e) => {
     if (CONFIG.debug) console.error(`MITM ${host} 客户端错误:`, e.message);
@@ -308,14 +325,19 @@ proxyServer.on('connect', (req, clientSocket, head) => {
           // socket 可能已关闭
         }
 
-        console.log(`[${reqTime}] ${method} ${fullUrl} → ${realRes.statusCode}`);
+        console.log(`[${reqTime}] ${clientIP} | ${method} ${fullUrl} → ${realRes.statusCode}`);
 
         saveCaptureLog({
           type: 'https',
+          clientIP: clientIP,
           method,
           url: fullUrl,
           host,
           requestHeaders: reqHeaders,
+          requestBody: (() => {
+            const cl = parseInt(reqHeaders['content-length']) || 0;
+            return cl > 0 ? bodyHead.substring(0, Math.min(cl, 10000)) : '';
+          })(),
           responseStatus: realRes.statusCode,
           responseHeaders: realRes.headers,
           responseBody: responseBody.substring(0, 10000),

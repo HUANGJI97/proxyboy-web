@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>下载 CA 证书 - 代理抓包服务</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -231,7 +232,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="icon">📜</div>
+        <div class="icon"><i class="fa-solid fa-certificate"></i></div>
         
         <h1>下载 CA 证书</h1>
         <p class="subtitle">
@@ -239,7 +240,7 @@
         </p>
         
         <div class="cert-info">
-            <h3>📋 证书信息</h3>
+            <h3><i class="fa-solid fa-info-circle"></i> 证书信息</h3>
             <div class="info-item">
                 <span class="info-label">证书名称：</span>
                 <span class="info-value">ProxySniffer CA</span>
@@ -259,15 +260,15 @@
         </div>
         
         <a href="ca.crt" download="ProxySniffer_CA.crt" class="download-btn">
-            <span style="font-size: 24px;">⬇️</span>
+            <i class="fa-solid fa-download" style="font-size: 24px;"></i>
             <span>下载 CA 证书</span>
         </a>
         
         <div class="steps">
-            <h3>📖 安装步骤</h3>
+            <h3><i class="fa-solid fa-book"></i> 安装步骤</h3>
             
             <div class="step-platform">
-                <h4>📱 iOS (iPhone/iPad) 详细步骤</h4>
+                <h4><i class="fa-brands fa-apple"></i> iOS (iPhone/iPad) 详细步骤</h4>
                 <ol>
                     <li><strong>下载证书</strong>：点击上方按钮下载 <code>ca.crt</code></li>
                     <li><strong>发送证书到 iOS 设备</strong>：
@@ -283,7 +284,7 @@
                         <br>• 输入 <strong>设备密码</strong>
                         <br>• 点击 <strong>"安装"</strong> 确认
                     </li>
-                    <li><strong>⚠️ 启用完全信任</strong>（重要！）：
+                    <li><strong><i class="fa-solid fa-triangle-exclamation"></i> 启用完全信任</strong>（重要！）：
                         <br>• 打开 <strong>设置</strong> → <strong>通用</strong>
                         <br>• 滑到最下方，点击 <strong>"关于本机"</strong>
                         <br>• 找到 <strong>"证书信任设置"</strong> 并点击
@@ -304,7 +305,7 @@
                 </ol>
                 
                 <div class="ios-detail">
-                    <strong>⚠️ 常见问题：</strong>
+                    <strong><i class="fa-solid fa-triangle-exclamation"></i> 常见问题：</strong>
                     <br><br>
                     <strong>Q1: 找不到"描述文件"？</strong>
                     <br>A: iOS 16+ 路径：设置 → 通用 → VPN与设备管理
@@ -324,7 +325,7 @@
             </div>
             
             <div class="step-platform">
-                <h4>🖥️ Windows</h4>
+                <h4><i class="fa-brands fa-windows"></i> Windows</h4>
                 <ol>
                     <li>点击下载的 <code>ca.crt</code> 文件</li>
                     <li>点击 <strong>"安装证书"</strong></li>
@@ -336,7 +337,7 @@
             </div>
             
             <div class="step-platform">
-                <h4>🍎 macOS</h4>
+                <h4><i class="fa-brands fa-apple"></i> macOS</h4>
                 <ol>
                     <li>双击 <code>ca.crt</code> 文件，会自动打开"钥匙串访问"</li>
                     <li>选择 <strong>"系统"</strong> 或 <strong>"登录"</strong> 钥匙串</li>
@@ -348,7 +349,7 @@
             </div>
             
             <div class="step-platform">
-                <h4>🤖 Android</h4>
+                <h4><i class="fa-brands fa-android"></i> Android</h4>
                 <ol>
                     <li>设置 → 安全 → 加密与凭据 → <strong>"安装证书"</strong> → CA 证书</li>
                     <li>选择下载的 <code>ca.crt</code></li>
@@ -361,7 +362,7 @@
         </div>
         
         <div class="warning">
-            <h4>⚠️ 安全提醒</h4>
+            <h4><i class="fa-solid fa-triangle-exclamation"></i> 安全提醒</h4>
             <p>
                 1. 此证书仅用于授权的安全测试环境<br>
                 2. 请勿在生产环境未经授权使用<br>

@@ -1,39 +1,68 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
-    <title>测试页面 - ProxySniffer</title>
+    <title>测试页面 - Proxyboy</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
-        .status { padding: 20px; border: 2px solid #4ec9b0; border-radius: 8px; margin: 20px 0; }
-        .success { color: #4ec9b0; }
-        .error { color: #f44747; }
-        button { padding: 10px 20px; margin: 10px; background: #0e639c; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+
+        .status {
+            padding: 20px;
+            border: 2px solid #4ec9b0;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .success {
+            color: #4ec9b0;
+        }
+
+        .error {
+            color: #f44747;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background: #0e639c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
     </style>
 </head>
+
 <body>
-    <h1>🔍 ProxySniffer - 界面测试页面</h1>
-    
+    <h1><i class="fa-solid fa-magnifying-glass"></i> ProxySniffer - 界面测试页面</h1>
+
     <div class="status">
-        <h2>✅ 如果你看到这个页面，说明 Proxyman 风格界面已经成功部署！</h2>
+        <h2><i class="fa-solid fa-circle-check"></i> 如果你看到这个页面，说明 Proxyman 风格界面已经成功部署！</h2>
         <p>这个页面的文件是：<strong>test-proxyman.html</strong></p>
         <p>Proxyman 风格界面的文件是：<strong>proxyman-style.html</strong></p>
     </div>
-    
-    <h3>📋 测试步骤：</h3>
+
+    <h3><i class="fa-solid fa-list-check"></i> 测试步骤：</h3>
     <ol>
         <li>如果你看到这个页面，说明 Web 服务正常工作</li>
         <li>点击下面的按钮访问 Proxyman 风格界面</li>
         <li>如果还是简陋界面，说明浏览器缓存了旧页面</li>
     </ol>
-    
+
     <button onclick="window.location.href='proxyman-style.html?t=' + Date.now()">访问 Proxyman 界面（强制刷新）</button>
-    
+
     <button onclick="window.open('proxyman-style.html?t=' + Date.now(), '_blank')">新标签页打开 Proxyman 界面</button>
-    
-    <h3>🧪 验证信息：</h3>
+
+    <h3><i class="fa-solid fa-flask"></i> 验证信息：</h3>
     <div id="info"></div>
-    
+
     <script>
         // 显示当前页面信息
         document.getElementById('info').innerHTML = `
@@ -41,18 +70,19 @@
             <p>当前时间: ${new Date().toLocaleString()}</p>
             <p>用户代理: ${navigator.userAgent}</p>
         `;
-        
+
         // 检查是否可以访问 proxyman-style.html
         fetch('proxyman-style.html?t=' + Date.now())
             .then(r => r.text())
             .then(html => {
                 if (html.includes('Proxyman Style') || html.includes('ProxySniffer')) {
-                    console.log('✅ proxyman-style.html 内容正确');
+                    console.log('proxyman-style.html 内容正确');
                 } else {
-                    console.error('❌ proxyman-style.html 内容不正确');
+                    console.error('proxyman-style.html 内容不正确');
                 }
             })
             .catch(e => console.error('无法加载 proxyman-style.html:', e));
     </script>
 </body>
+
 </html>

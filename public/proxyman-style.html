@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProxySniffer - Proxyman Style</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -124,12 +125,15 @@
             font-size: 13px;
         }
         .search-box::before {
-            content: "🔍";
+            content: "\f002";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
             position: absolute;
             left: 10px;
             top: 50%;
             transform: translateY(-50%);
             font-size: 12px;
+            color: #858585;
         }
         .btn {
             padding: 6px 12px;
@@ -539,13 +543,13 @@
 </head>
 <body>
     <div class="toolbar">
-        <h1>🔍 ProxySniffer</h1>
+        <h1><i class="fa-solid fa-magnifying-glass"></i> ProxySniffer</h1>
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="Filter by URL, method, status..." oninput="filterRequests()">
         </div>
-        <button class="btn" id="groupToggle" onclick="toggleGrouping()">📱 Group by IP</button>
-        <button class="btn" onclick="exportAsCurl()">📋 Copy as cURL</button>
-        <button class="btn btn-danger" onclick="clearLogs()">🗑️ Clear</button>
+        <button class="btn" id="groupToggle" onclick="toggleGrouping()"><i class="fa-solid fa-mobile-screen-button"></i> Group by IP</button>
+        <button class="btn" onclick="exportAsCurl()"><i class="fa-solid fa-clipboard"></i> Copy as cURL</button>
+        <button class="btn btn-danger" onclick="clearLogs()"><i class="fa-solid fa-trash-can"></i> Clear</button>
     </div>
     
     <div class="main-container">
@@ -566,7 +570,7 @@
             </div>
             <div class="detail-content" id="detailContent">
                 <div class="empty-state">
-                    <div class="icon">📭</div>
+                    <i class="fa-regular fa-folder-open icon"></i>
                     <div class="text">Select a request to view details</div>
                 </div>
             </div>
@@ -603,7 +607,7 @@
         function toggleGrouping() {
             groupByIp = !groupByIp;
             const btn = document.getElementById('groupToggle');
-            btn.textContent = groupByIp ? '📱 Ungroup' : '📱 Group by IP';
+            btn.innerHTML = groupByIp ? '<i class="fa-solid fa-mobile-screen-button"></i> Ungroup' : '<i class="fa-solid fa-mobile-screen-button"></i> Group by IP';
             btn.style.background = groupByIp ? '#1177bb' : '#0e639c';
             renderList();
         }
@@ -611,7 +615,7 @@
         // 初始化按钮状态
         window.addEventListener('load', () => {
             const btn = document.getElementById('groupToggle');
-            btn.textContent = '📱 Ungroup';
+            btn.innerHTML = '<i class="fa-solid fa-mobile-screen-button"></i> Ungroup';
             btn.style.background = '#1177bb';
         });
         
@@ -652,7 +656,7 @@
                     return `
                         <div class="group-header ${isCollapsed ? 'collapsed' : ''}" onclick="toggleGroup('${ip}')">
                             <span class="arrow">▼</span>
-                            <span>📱 ${ip}</span>
+                            <span><i class="fa-solid fa-mobile-screen-button"></i> ${ip}</span>
                             <span class="group-count">${items.length} requests</span>
                         </div>
                         <div class="group-items ${isCollapsed ? 'collapsed' : ''}" style="max-height: ${isCollapsed ? '0' : items.length * 100 + 'px'}">
@@ -676,7 +680,7 @@
             const status = log.responseStatus || '-';
             const statusClass = status >= 200 && status < 300 ? 'success' : 'error';
             const time = log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : '';
-            const clientIp = log.clientIp ? `<div class="client-ip">📱 ${log.clientIp}</div>` : '';
+            const clientIp = log.clientIp ? `<div class="client-ip"><i class="fa-solid fa-mobile-screen-button"></i> ${log.clientIp}</div>` : '';
             
             return `
                 <div class="request-item ${selectedIndex === realIdx ? 'selected' : ''}" 
@@ -742,7 +746,7 @@
                 <div class="section">
                     <div class="section-title">Client Info</div>
                     <table class="info-table">
-                        <tr><td>IP Address</td><td>📱 ${log.clientInfo.ip || '-'}</td></tr>
+                        <tr><td>IP Address</td><td><i class="fa-solid fa-mobile-screen-button"></i> ${log.clientInfo.ip || '-'}</td></tr>
                         ${log.clientInfo.userAgent ? `<tr><td>User Agent</td><td>${escapeHtml(log.clientInfo.userAgent)}</td></tr>` : ''}
                         ${log.clientInfo.referer ? `<tr><td>Referer</td><td>${escapeHtml(log.clientInfo.referer)}</td></tr>` : ''}
                         ${log.clientInfo.origin ? `<tr><td>Origin</td><td>${escapeHtml(log.clientInfo.origin)}</td></tr>` : ''}
@@ -930,7 +934,7 @@
                 renderList();
                 document.getElementById('detailContent').innerHTML = `
                     <div class="empty-state">
-                        <div class="icon">📭</div>
+                        <i class="fa-regular fa-folder-open icon"></i>
                         <div class="text">Select a request to view details</div>
                     </div>
                 `;

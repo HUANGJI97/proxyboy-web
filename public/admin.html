@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProxySniffer - Admin</title>
+    <title>Proxyboy - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -199,12 +200,234 @@
             font-size: 11px;
         }
 
-        .group-items {
-            /* 分组内的请求列表 */
-        }
-
         .group-items.collapsed {
             display: none;
+        }
+
+        /* Level 2: 域名头 */
+        .domain-header {
+            padding: 5px 12px 5px 28px;
+            background: #292929;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #ce9178;
+        }
+
+        .domain-header:hover {
+            background: #333;
+        }
+
+        .domain-header .arrow {
+            transition: transform 0.2s;
+            font-size: 10px;
+        }
+
+        .domain-header.collapsed .arrow {
+            transform: rotate(-90deg);
+        }
+
+        .domain-items.collapsed {
+            display: none;
+        }
+
+        /* Level 3: 路径项 */
+        .path-item {
+            padding: 3px 12px 3px 48px;
+            cursor: pointer;
+            border-bottom: 1px solid #2d2d30;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.15s;
+        }
+
+        .path-item:hover {
+            background: #2a2d2e;
+        }
+
+        .path-item.selected {
+            background: #094771;
+        }
+
+        .path-method {
+            font-weight: 600;
+            font-size: 10px;
+            padding: 1px 5px;
+            border-radius: 3px;
+            min-width: 46px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .path-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #a0a0a0;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+        }
+
+        /* 右侧面板上下分屏 */
+        .detail-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .detail-top {
+            background: #252526;
+            border-bottom: 2px solid #3e3e42;
+            max-height: 40%;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .detail-top-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 60px;
+            color: #858585;
+            font-size: 12px;
+        }
+
+        .path-list-header {
+            padding: 6px 12px;
+            font-size: 11px;
+            color: #888;
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .path-item-top {
+            padding: 5px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #2d2d30;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            transition: background 0.15s;
+        }
+
+        .path-item-top:hover {
+            background: #2a2d2e;
+        }
+
+        .path-item-top.selected {
+            background: #094771;
+        }
+
+        .path-item-top .path-url {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+        }
+
+        .detail-bottom {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* JSON 语法高亮 */
+        .json-key {
+            color: #9cdcfe;
+        }
+
+        .json-string {
+            color: #ce9178;
+        }
+
+        .json-number {
+            color: #b5cea8;
+        }
+
+        .json-boolean {
+            color: #569cd6;
+        }
+
+        .json-null {
+            color: #569cd6;
+        }
+
+        .json-panel {
+            background: #1e1e1e;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .headers-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .headers-table td {
+            padding: 3px 8px;
+            border-bottom: 1px solid #2d2d30;
+            vertical-align: top;
+        }
+
+        .headers-table .header-name {
+            color: #9cdcfe;
+            font-family: 'Courier New', monospace;
+            white-space: nowrap;
+            width: 1%;
+        }
+
+        .headers-table .header-val {
+            color: #ce9178;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+
+        /* Query 参数表格 */
+        .query-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .query-table td {
+            padding: 3px 8px;
+            border-bottom: 1px solid #2d2d30;
+        }
+
+        .query-table .query-key {
+            color: #9cdcfe;
+            font-family: 'Courier New', monospace;
+            white-space: nowrap;
+            width: 1%;
+        }
+
+        .query-table .query-val {
+            color: #ce9178;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
         }
 
         .search-box {
@@ -534,7 +757,7 @@
 
     <!-- 顶部工具栏 -->
     <div class="toolbar">
-        <h1>🔶 ProxySniffer</h1>
+        <h1><i class="fa-solid fa-wifi"></i> Proxyboy</h1>
 
         <!-- 代理服务状态 -->
         <div class="proxy-status">
@@ -552,8 +775,8 @@
             <input type="text" id="searchInput" placeholder="搜索 URL..." oninput="filterLogs()">
         </div>
 
-        <button class="btn" onclick="refreshLogs()">🔄 刷新</button>
-        <button class="btn btn-danger" onclick="clearLogs()">🗑️ 清空</button>
+        <button class="btn" onclick="refreshLogs()"><i class="fa-solid fa-arrows-rotate"></i> 刷新</button>
+        <button class="btn btn-danger" onclick="clearLogs()"><i class="fa-solid fa-trash-can"></i> 清空</button>
     </div>
 
     <!-- 主内容区 -->
@@ -573,15 +796,24 @@
 
         <!-- 右侧：详情面板 -->
         <div class="detail-panel">
-            <div class="detail-tabs">
-                <div class="tab active" onclick="switchTab('overview')">📊 Overview</div>
-                <div class="tab" onclick="switchTab('request')">📤 Request</div>
-                <div class="tab" onclick="switchTab('response')">📥 Response</div>
-                <div class="tab" onclick="switchTab('raw')">📜 Raw Data</div>
+            <!-- 上方：域名下的路径列表 -->
+            <div class="detail-top" id="detailPathList">
+                <div class="detail-top-empty">选择域名查看请求路径</div>
             </div>
-            <div class="detail-content" id="detailContent">
-                <div class="empty-state">
-                    选择一个请求查看详情
+            <!-- 下方：请求详情 -->
+            <div class="detail-bottom">
+                <div class="detail-tabs">
+                    <div class="tab active" onclick="switchTab('overview')"><i class="fa-solid fa-chart-simple"></i>
+                        Overview</div>
+                    <div class="tab" onclick="switchTab('request')"><i class="fa-solid fa-paper-plane"></i> Request
+                    </div>
+                    <div class="tab" onclick="switchTab('response')"><i class="fa-solid fa-reply"></i> Response</div>
+                    <div class="tab" onclick="switchTab('raw')"><i class="fa-solid fa-file-code"></i> Raw Data</div>
+                </div>
+                <div class="detail-content" id="detailContent">
+                    <div class="empty-state">
+                        选择一个请求查看详情
+                    </div>
                 </div>
             </div>
         </div>
@@ -591,73 +823,157 @@
         let allLogs = [];
         let selectedIndex = -1;
         let currentTab = 'overview';
-        let collapsedGroups = new Set();  // 记录折叠的分组
+        let collapsedClients = new Set();   // Level 1: 折叠的客户端
+        let collapsedDomains = new Set();   // Level 2: 折叠的域名 key="ip::domain"
         let proxyRunning = false;
 
-        // 自定义 Toast 通知
+        // === 工具函数 ===
+
+        function h(str) {
+            const d = document.createElement('div');
+            d.textContent = str || '';
+            return d.innerHTML;
+        }
+
+        function escAttr(s) {
+            return (s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        }
+
+        function parseURL(url) {
+            let hostname = url || '', pathname = '/', search = '';
+            try {
+                const u = new URL(url);
+                hostname = u.hostname;
+                pathname = u.pathname;
+                search = u.search;
+            } catch (e) { /* 非标准 URL 原样展示 */ }
+            return { hostname, pathname, search, fullPath: pathname + search };
+        }
+
+        // JSON 语法高亮
+        function syntaxHighlight(obj) {
+            let json = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+            if (typeof obj !== 'string') json = JSON.stringify(obj, null, 2);
+            else {
+                // 尝试格式化 JSON 字符串
+                try { json = JSON.stringify(JSON.parse(obj), null, 2); } catch (e) { /* 保持原样 */ }
+            }
+            return json
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^"\\])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, match => {
+                    let cls = 'json-number';
+                    if (/^"/.test(match)) {
+                        cls = /:$/.test(match) ? 'json-key' : 'json-string';
+                    } else if (/true|false/.test(match)) {
+                        cls = 'json-boolean';
+                    } else if (/null/.test(match)) {
+                        cls = 'json-null';
+                    }
+                    return '<span class="' + cls + '">' + match + '</span>';
+                });
+        }
+
+        // 解析 Query 参数
+        function parseQueryParams(url) {
+            const params = [];
+            try {
+                const u = new URL(url);
+                u.searchParams.forEach((v, k) => params.push({ key: k, val: v }));
+            } catch (e) { }
+            return params;
+        }
+
+        // 渲染 Headers 表格
+        function renderHeadersTable(headers) {
+            if (!headers || Object.keys(headers).length === 0) return '<div class="empty-state">无数据</div>';
+            return `<table class="headers-table">${Object.entries(headers).map(([k, v]) =>
+                `<tr><td class="header-name">${h(k)}</td><td class="header-val">${h(String(v))}</td></tr>`
+            ).join('')}</table>`;
+        }
+
+        function buildLogTree(logs) {
+            const tree = {};
+            const sorted = [...logs].sort((a, b) =>
+                new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()
+            );
+            sorted.forEach(log => {
+                const ip = log.clientIP || log.clientIp || 'Unknown';
+                const { hostname, pathname, search } = parseURL(log.url || '');
+                if (!tree[ip]) tree[ip] = {};
+                if (!tree[ip][hostname]) tree[ip][hostname] = [];
+                tree[ip][hostname].push({
+                    ...log,
+                    _hostname: hostname,
+                    _pathname: pathname,
+                    _search: search,
+                    _fullPath: pathname + search,
+                    _idx: allLogs.indexOf(log),
+                });
+            });
+            return tree;
+        }
+
+        // 获取当前选中日志的 ip + domain
+        function getSelectedDomainKey() {
+            if (selectedIndex < 0 || selectedIndex >= allLogs.length) return null;
+            const log = allLogs[selectedIndex];
+            const ip = log.clientIP || log.clientIp || 'Unknown';
+            const { hostname } = parseURL(log.url || '');
+            return `${ip}::${hostname}`;
+        }
+
+        // === Toast 通知 ===
+
         function showToast(message, type = 'info', duration = 3000) {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+            const icons = { success: 'fa-solid fa-circle-check', error: 'fa-solid fa-circle-xmark', info: 'fa-solid fa-circle-info', warning: 'fa-solid fa-triangle-exclamation' };
             toast.className = `toast ${type}`;
-            toast.innerHTML = `<span>${icons[type] || icons.info}</span><span>${message}</span>`;
+            toast.innerHTML = `<span><i class="${icons[type] || icons.info}"></i></span><span>${message}</span>`;
             container.appendChild(toast);
-
             setTimeout(() => {
                 toast.classList.add('removing');
                 setTimeout(() => toast.remove(), 300);
             }, duration);
         }
 
-        // 获取本机网卡 IP（仅在代理启动时展示）
+        // === 网卡 IP ===
+
         async function fetchNetworkInfo() {
             const el = document.getElementById('networkInfo');
-            if (!proxyRunning) {
-                el.innerHTML = '';
-                return;
-            }
+            if (!proxyRunning) { el.innerHTML = ''; return; }
             try {
                 const response = await fetch('/admin/api/service/network', { cache: 'no-cache' });
                 const data = await response.json();
                 if (data.ips && data.ips.length > 0) {
-                    const lines = data.ips.map(ip =>
+                    el.innerHTML = data.ips.map(ip =>
                         `<span class="ip-line"><span class="ip-label">${ip.interface}:</span> <span class="ip-addr">${ip.address}:8888</span></span>`
-                    );
-                    el.innerHTML = lines.join('');
+                    ).join('');
                 } else {
                     el.innerHTML = '<span class="ip-label">无可用网卡</span>';
                 }
-            } catch (e) {
-                el.textContent = '';
-            }
+            } catch (e) { el.textContent = ''; }
         }
 
-        // 检测代理服务状态
+        // === 代理服务状态 ===
+
         async function checkProxyStatus() {
             try {
-                // 正确方法：调用后端 API 检测端口状态
-                const response = await fetch('/admin/api/service/status', {
-                    cache: 'no-cache'
-                });
+                const response = await fetch('/admin/api/service/status', { cache: 'no-cache' });
                 const data = await response.json();
-
                 proxyRunning = data.proxy.running;
                 updateProxyStatus();
             } catch (e) {
-                console.error('检测代理服务状态失败:', e);
                 proxyRunning = false;
                 updateProxyStatus();
             }
         }
 
-        // 更新代理服务状态显示
         function updateProxyStatus() {
             const dot = document.getElementById('proxy-status-dot');
             const text = document.getElementById('proxy-status-text');
             const btn = document.getElementById('proxy-toggle-btn');
-
-            if (proxyTransitioning) return; // 过渡状态中，不更新
-
+            if (proxyTransitioning) return;
             if (proxyRunning) {
                 dot.className = 'status-dot running';
                 text.textContent = '已运行';
@@ -676,7 +992,6 @@
 
         let proxyTransitioning = false;
 
-        // 设置按钮为过渡状态
         function setButtonTransition(label) {
             proxyTransitioning = true;
             const btn = document.getElementById('proxy-toggle-btn');
@@ -685,7 +1000,6 @@
             btn.disabled = true;
         }
 
-        // 轮询等待状态变更
         async function waitForStatus(targetRunning, maxRetries = 10) {
             for (let i = 0; i < maxRetries; i++) {
                 await new Promise(r => setTimeout(r, 1000));
@@ -701,28 +1015,21 @@
                 } catch (e) { /* retry */ }
             }
             proxyTransitioning = false;
-            await checkProxyStatus(); // 最终确认
+            await checkProxyStatus();
             return false;
         }
 
-        // 切换代理服务（合并启动/停止）
         async function toggleProxyService() {
             const action = proxyRunning ? 'stop' : 'start';
-            const stateLabel = proxyRunning ? '停止中...' : '启动中...';
-            setButtonTransition(stateLabel);
-
+            setButtonTransition(proxyRunning ? '停止中...' : '启动中...');
             try {
                 const response = await fetch('/admin/api/service/proxy/' + action, { method: 'POST' });
                 const data = await response.json();
-
                 if (data.success) {
                     const targetRunning = !proxyRunning;
-                    const success = await waitForStatus(targetRunning);
-                    if (success) {
-                        showToast(proxyRunning ? '代理服务启动成功！' : '代理服务已停止', proxyRunning ? 'success' : 'info');
-                    } else {
-                        showToast('状态确认超时，请手动刷新', 'warning');
-                    }
+                    const ok = await waitForStatus(targetRunning);
+                    showToast(ok ? (proxyRunning ? '代理服务启动成功！' : '代理服务已停止') : '状态确认超时，请手动刷新',
+                        ok ? (proxyRunning ? 'success' : 'info') : 'warning');
                 } else {
                     proxyTransitioning = false;
                     updateProxyStatus();
@@ -735,115 +1042,166 @@
             }
         }
 
-        // 加载日志
+        // === 日志加载 ===
+
         async function loadLogs() {
             try {
                 const response = await fetch('/admin/api/logs?limit=100');
                 const data = await response.json();
-
                 allLogs = data.logs || [];
                 renderLogs();
+                renderPathList();
                 updateCount();
-            } catch (e) {
-                console.error('加载日志失败:', e);
-            }
+            } catch (e) { console.error('加载日志失败:', e); }
         }
 
-        // 渲染日志列表（强制分组模式）
+        // === 左侧三级树 ===
+
+        function methodClass(method) {
+            return ['GET', 'POST', 'PUT', 'DELETE', 'CONNECT'].includes(method) ? method : 'HTTPS';
+        }
+
         function renderLogs() {
             const container = document.getElementById('requestList');
-
             if (allLogs.length === 0) {
-                container.innerHTML = '<div class="empty-state">暂无请求</div>';
+                container.innerHTML = '<div class="empty-state">暂无请求，请启动代理服务</div>';
                 return;
             }
 
-            // 先按时间倒序排序（最新的在前面）
-            const sortedLogs = [...allLogs].sort((a, b) => {
-                const timeA = new Date(a.timestamp || 0).getTime();
-                const timeB = new Date(b.timestamp || 0).getTime();
-                return timeB - timeA; // 倒序
-            });
+            const tree = buildLogTree(allLogs);
 
-            // 按客户端 IP 分组
-            const groups = {};
-            sortedLogs.forEach((log, idx) => {
-                const ip = log.clientIp || 'Unknown';
-                if (!groups[ip]) groups[ip] = [];
-                groups[ip].push({ log, idx: allLogs.indexOf(log) });
-            });
-
-            // 渲染分组
-            container.innerHTML = Object.entries(groups).map(([ip, items]) => {
-                const isCollapsed = collapsedGroups.has(ip);
+            container.innerHTML = Object.entries(tree).map(([ip, domains]) => {
+                const clientCollapsed = collapsedClients.has(ip);
+                const totalReq = Object.values(domains).reduce((s, a) => s + a.length, 0);
                 return `
-                    <div class="group-header ${isCollapsed ? 'collapsed' : ''}" onclick="toggleGroup('${ip}')">
-                        <span class="arrow">▼</span>
-                        <span>客户端 IP: ${ip}</span>
-                        <span class="group-count">(${items.length} 个请求)</span>
+                <div class="client-group">
+                    <div class="group-header ${clientCollapsed ? 'collapsed' : ''}" onclick="toggleClient('${escAttr(ip)}')">
+                        <i class="fa-solid fa-chevron-down arrow"></i>
+                        <span>客户端 ${h(ip)}</span>
+                        <span class="group-count">(${totalReq} 个请求)</span>
                     </div>
-                    <div class="group-items ${isCollapsed ? 'collapsed' : ''}">
-                        ${items.map(({ log, idx }) => `
-                            <div class="request-item ${idx === selectedIndex ? 'selected' : ''}" onclick="selectLog(${idx})">
-                                <div>
-                                    <span class="method ${log.method}">${log.method}</span>
-                                    <span class="url">${log.url}</span>
-                                </div>
-                                <div class="meta">
-                                    <span>${log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : ''}</span>
-                                    ${log.responseStatus ? `<span>Status: ${log.responseStatus}</span>` : ''}
-                                </div>
+                    <div class="group-items ${clientCollapsed ? 'collapsed' : ''}">
+                        ${Object.entries(domains).map(([domain, paths]) => {
+                    const dk = `${ip}::${domain}`;
+                    const domCollapsed = collapsedDomains.has(dk);
+                    return `
+                        <div class="domain-group">
+                            <div class="domain-header ${domCollapsed ? 'collapsed' : ''}" onclick="toggleDomain('${escAttr(ip)}', '${escAttr(domain)}')">
+                                <i class="fa-solid fa-chevron-down arrow"></i>
+                                <span>${h(domain)}</span>
+                                <span class="group-count">(${paths.length})</span>
                             </div>
-                        `).join('')}
+                            <div class="domain-items ${domCollapsed ? 'collapsed' : ''}">
+                                ${paths.map(p => `
+                                <div class="path-item ${p._idx === selectedIndex ? 'selected' : ''}" onclick="onPathClick('${escAttr(ip)}', '${escAttr(domain)}', ${p._idx})">
+                                    <span class="path-method method ${methodClass(p.method)}">${h(p.method)}</span>
+                                    <span class="path-text">${h(p._pathname)}</span>
+                                </div>
+                                `).join('')}
+                            </div>
+                        </div>`;
+                }).join('')}
                     </div>
-                `;
+                </div>`;
             }).join('');
         }
 
-        // 切换分组折叠状态
-        function toggleGroup(ip) {
-            if (collapsedGroups.has(ip)) {
-                collapsedGroups.delete(ip);
-            } else {
-                collapsedGroups.add(ip);
-            }
+        function toggleClient(ip) {
+            collapsedClients.has(ip) ? collapsedClients.delete(ip) : collapsedClients.add(ip);
             renderLogs();
         }
 
-        // 选择日志
-        function selectLog(idx) {
+        function toggleDomain(ip, domain) {
+            const key = `${ip}::${domain}`;
+            collapsedDomains.has(key) ? collapsedDomains.delete(key) : collapsedDomains.add(key);
+            renderLogs();
+        }
+
+        function onPathClick(ip, domain, idx) {
             selectedIndex = idx;
             renderLogs();
+            renderPathList();
             renderDetail();
         }
 
-        // 渲染详情
+        // === 右侧上方路径列表 ===
+
+        function renderPathList() {
+            const container = document.getElementById('detailPathList');
+            const dk = getSelectedDomainKey();
+            if (!dk) {
+                container.innerHTML = '<div class="detail-top-empty">选择域名查看请求路径</div>';
+                return;
+            }
+
+            const tree = buildLogTree(allLogs);
+            const [ip, domain] = dk.split('::');
+            const domainLogs = (tree[ip] && tree[ip][domain]) ? tree[ip][domain] : [];
+
+            if (domainLogs.length === 0) {
+                container.innerHTML = '<div class="detail-top-empty">暂无请求</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="path-list-header">${h(domain)} — ${domainLogs.length} 条请求</div>
+                ${domainLogs.map(p => `
+                <div class="path-item-top ${p._idx === selectedIndex ? 'selected' : ''}" onclick="onPathTopClick(${p._idx})">
+                    <span class="method ${methodClass(p.method)}" style="font-size:10px;padding:1px 5px;min-width:42px;">${h(p.method)}</span>
+                    <span class="path-url">${h(p._fullPath)}</span>
+                </div>
+                `).join('')}
+            `;
+        }
+
+        function onPathTopClick(idx) {
+            selectedIndex = idx;
+            renderLogs();
+            renderPathList();
+            renderDetail();
+        }
+
+        // === 右侧下方详情面板 ===
+
         function renderDetail() {
             const container = document.getElementById('detailContent');
-
             if (selectedIndex < 0 || selectedIndex >= allLogs.length) {
                 container.innerHTML = '<div class="empty-state">选择一个请求查看详情</div>';
                 return;
             }
-
             const log = allLogs[selectedIndex];
+            const { hostname, fullPath } = parseURL(log.url || '');
 
             if (currentTab === 'overview') {
                 container.innerHTML = `
                     <div class="detail-section">
-                        <h3>📊 概览</h3>
+                        <h3><i class="fa-solid fa-chart-simple"></i> 概览</h3>
                         <div class="detail-row">
                             <div class="detail-label">方法</div>
-                            <div class="detail-value"><span class="method ${log.method}">${log.method}</span></div>
+                            <div class="detail-value"><span class="method ${methodClass(log.method)}">${h(log.method)}</span></div>
                         </div>
                         <div class="detail-row">
-                            <div class="detail-label">URL</div>
-                            <div class="detail-value">${log.url}</div>
+                            <div class="detail-label">Host</div>
+                            <div class="detail-value">${h(hostname)}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">路径</div>
+                            <div class="detail-value">${h(fullPath)}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">完整 URL</div>
+                            <div class="detail-value" style="word-break:break-all;">${h(log.url)}</div>
                         </div>
                         ${log.responseStatus ? `
                         <div class="detail-row">
                             <div class="detail-label">状态码</div>
                             <div class="detail-value">${log.responseStatus}</div>
+                        </div>
+                        ` : ''}
+                        ${log.clientIP || log.clientIp ? `
+                        <div class="detail-row">
+                            <div class="detail-label">客户端 IP</div>
+                            <div class="detail-value">${h(log.clientIP || log.clientIp)}</div>
                         </div>
                         ` : ''}
                         <div class="detail-row">
@@ -853,42 +1211,52 @@
                     </div>
                 `;
             } else if (currentTab === 'request') {
+                const queryParams = parseQueryParams(log.url || '');
                 container.innerHTML = `
                     <div class="detail-section">
-                        <h3>📤 请求详情</h3>
-                        <div class="detail-row">
-                            <div class="detail-label">请求头</div>
-                            <div class="detail-value">
-                                <pre>${JSON.stringify(log.requestHeaders, null, 2)}</pre>
-                            </div>
-                        </div>
+                        <h3><i class="fa-solid fa-magnifying-glass"></i> Query 参数</h3>
+                        ${queryParams.length > 0 ? `
+                        <table class="query-table">
+                            ${queryParams.map(p => `
+                            <tr><td class="query-key">${h(p.key)}</td><td class="query-val">${h(p.val)}</td></tr>
+                            `).join('')}
+                        </table>
+                        ` : '<div class="empty-state">无 Query 参数</div>'}
+                    </div>
+                    <div class="detail-section">
+                        <h3><i class="fa-solid fa-list"></i> Headers</h3>
+                        ${renderHeadersTable(log.requestHeaders)}
+                    </div>
+                    <div class="detail-section">
+                        <h3><i class="fa-solid fa-box-archive"></i> Body</h3>
+                        ${log.requestBody ? `
+                        <div class="json-panel">${syntaxHighlight(log.requestBody)}</div>
+                        ` : '<div class="empty-state">无请求体数据</div>'}
                     </div>
                 `;
             } else if (currentTab === 'response') {
                 container.innerHTML = `
                     <div class="detail-section">
-                        <h3>📥 响应详情</h3>
+                        <h3><i class="fa-solid fa-list"></i> 响应头</h3>
+                        ${renderHeadersTable(log.responseHeaders)}
+                    </div>
+                    <div class="detail-section">
+                        <h3><i class="fa-solid fa-reply"></i> 响应体</h3>
                         ${log.responseBody ? `
-                        <div class="detail-row">
-                            <div class="detail-label">响应体</div>
-                            <div class="detail-value">
-                                <pre>${log.responseBody.length > 5000 ? log.responseBody.substring(0, 5000) + '...' : log.responseBody}</pre>
-                            </div>
-                        </div>
+                        <div class="json-panel">${syntaxHighlight(log.responseBody)}</div>
                         ` : '<div class="empty-state">无响应数据</div>'}
                     </div>
                 `;
             } else if (currentTab === 'raw') {
                 container.innerHTML = `
                     <div class="detail-section">
-                        <h3>📜 原始数据</h3>
-                        <pre>${JSON.stringify(log, null, 2)}</pre>
+                        <h3><i class="fa-solid fa-file-code"></i> 原始数据</h3>
+                        <div class="json-panel">${syntaxHighlight(log)}</div>
                     </div>
                 `;
             }
         }
 
-        // 切换标签
         function switchTab(tab) {
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -896,47 +1264,90 @@
             renderDetail();
         }
 
-        // 过滤日志
+        // === 搜索 / 刷新 / 清空 ===
+
         function filterLogs() {
             const keyword = document.getElementById('searchInput').value.toLowerCase();
-            // 实现过滤逻辑
-            renderLogs();
+            if (!keyword) { renderLogs(); return; }
+            const container = document.getElementById('requestList');
+            const tree = buildLogTree(allLogs);
+            const filtered = {};
+            for (const [ip, domains] of Object.entries(tree)) {
+                for (const [domain, paths] of Object.entries(domains)) {
+                    const matched = paths.filter(p => {
+                        const url = (p.url || '').toLowerCase();
+                        return url.includes(keyword);
+                    });
+                    if (matched.length > 0) {
+                        if (!filtered[ip]) filtered[ip] = {};
+                        filtered[ip][domain] = matched;
+                    }
+                }
+            }
+            if (Object.keys(filtered).length === 0) {
+                container.innerHTML = '<div class="empty-state">无匹配结果</div>';
+                return;
+            }
+            // 复用 renderTree 但只显示匹配的
+            container.innerHTML = Object.entries(filtered).map(([ip, domains]) => {
+                const totalReq = Object.values(domains).reduce((s, a) => s + a.length, 0);
+                return `
+                <div class="client-group">
+                    <div class="group-header" onclick="toggleClient('${escAttr(ip)}')">
+                        <i class="fa-solid fa-chevron-down arrow"></i>
+                        <span>客户端 ${h(ip)}</span>
+                        <span class="group-count">(${totalReq})</span>
+                    </div>
+                    <div class="group-items">
+                        ${Object.entries(domains).map(([domain, paths]) => `
+                        <div class="domain-group">
+                            <div class="domain-header" onclick="toggleDomain('${escAttr(ip)}', '${escAttr(domain)}')">
+                                <i class="fa-solid fa-chevron-down arrow"></i>
+                                <span>${h(domain)}</span>
+                                <span class="group-count">(${paths.length})</span>
+                            </div>
+                            <div class="domain-items">
+                                ${paths.map(p => `
+                                <div class="path-item ${p._idx === selectedIndex ? 'selected' : ''}" onclick="onPathClick('${escAttr(ip)}', '${escAttr(domain)}', ${p._idx})">
+                                    <span class="path-method method ${methodClass(p.method)}">${h(p.method)}</span>
+                                    <span class="path-text">${h(p._pathname)}</span>
+                                </div>
+                                `).join('')}
+                            </div>
+                        </div>`).join('')}
+                    </div>
+                </div>`;
+            }).join('');
         }
 
-        // 刷新日志
         function refreshLogs() {
             loadLogs();
             checkProxyStatus();
         }
 
-        // 清空日志
         async function clearLogs() {
             if (!confirm('确定清空所有日志？')) return;
-
             try {
                 const response = await fetch('/admin/api/logs/clear', { method: 'POST' });
                 const data = await response.json();
-
                 if (data.success) {
                     allLogs = [];
+                    selectedIndex = -1;
                     renderLogs();
+                    renderPathList();
+                    renderDetail();
                     updateCount();
                 }
-            } catch (e) {
-                console.error('清空日志失败:', e);
-            }
+            } catch (e) { console.error('清空日志失败:', e); }
         }
 
-        // 更新计数
         function updateCount() {
             document.getElementById('requestCount').textContent = `${allLogs.length} items`;
         }
 
-        // 初始化
+        // === 初始化 ===
         checkProxyStatus();
         loadLogs();
-
-        // 定时刷新
         setInterval(checkProxyStatus, 5000);
         setInterval(loadLogs, 10000);
     </script>
