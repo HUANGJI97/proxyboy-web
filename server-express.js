@@ -12,11 +12,11 @@ const os = require('os');
 const CONFIG = {
   webPort: 8080,
   proxyPort: 8888,
-  publicDir: path.join(__dirname, 'public'),
-  certsDir: path.join(__dirname, 'certs'),
-  logsDir: path.join(__dirname, 'logs'),
-  caKeyPath: path.join(__dirname, 'certs', 'ca.key'),
-  caCertPath: path.join(__dirname, 'certs', 'ca.crt'),
+  publicDir: path.resolve(__dirname, 'public'),
+  certsDir: path.resolve(__dirname, 'certs'),
+  logsDir: path.resolve(__dirname, 'logs'),
+  caKeyPath: path.resolve(__dirname, 'certs', 'ca.key'),
+  caCertPath: path.resolve(__dirname, 'certs', 'ca.crt'),
   debug: false,
 };
 
@@ -262,23 +262,53 @@ webApp.post('/admin/api/service/proxy/stop', (req, res) => {
   }
 });
 
+// 安全 sendFile：检查文件存在后再发送
+// 使用 fs.createReadStream 绕过 Express 5 send 模块的 bug
+function safeSendFile(res, filePath, label) {
+  const fs = require('fs');
+  if (!fs.existsSync(filePath)) {
+    console.error(`[sendFile] 文件不存在: ${filePath} (${label})`);
+    return res.status(404).json({ success: false, error: `文件不存在: ${label}` });
+  }
+  // 使用流式发送，避免 Express 5 send 模块的 path 问题
+  const stream = fs.createReadStream(filePath);
+  stream.on('error', (err) => {
+    console.error(`[sendFile] 读取文件失败: ${filePath}`, err.message);
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, error: `读取文件失败: ${err.message}` });
+    }
+  });
+  // 根据文件扩展名设置 Content-Type
+  if (filePath.endsWith('.html')) res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  else if (filePath.endsWith('.crt')) res.setHeader('Content-Type', 'application/x-x509-ca-cert');
+  else if (filePath.endsWith('.key')) res.setHeader('Content-Type', 'application/x-pem-file');
+  stream.pipe(res);
+}
+
 // 路由：/admin -> admin.html
 webApp.get('/admin', (req, res) => {
-  res.sendFile(path.join(CONFIG.publicDir, 'admin.html'));
+  const filePath = path.join(CONFIG.publicDir, 'admin.html');
+  console.log(`[路由] /admin -> ${filePath} (exists: ${require('fs').existsSync(filePath)})`);
+  safeSendFile(res, filePath, 'admin.html');
 });
 
 // 路由：/manager -> service-manager.html
 webApp.get('/manager', (req, res) => {
-  res.sendFile(path.join(CONFIG.publicDir, 'service-manager.html'));
+  const filePath = path.join(CONFIG.publicDir, 'service-manager.html');
+  console.log(`[路由] /manager -> ${filePath} (exists: ${require('fs').existsSync(filePath)})`);
+  safeSendFile(res, filePath, 'service-manager.html');
 });
 
 // 路由：/cert -> 证书下载页面
 webApp.get('/cert', (req, res) => {
-  res.sendFile(path.join(CONFIG.certsDir, 'index.html'));
+  const filePath = path.join(CONFIG.certsDir, 'index.html');
+  console.log(`[路由] /cert -> ${filePath} (exists: ${require('fs').existsSync(filePath)})`);
+  safeSendFile(res, filePath, 'cert/index.html');
 });
 
 webApp.get('/cert/ca.crt', (req, res) => {
-  res.sendFile(CONFIG.caCertPath);
+  console.log(`[路由] /cert/ca.crt -> ${CONFIG.caCertPath} (exists: ${require('fs').existsSync(CONFIG.caCertPath)})`);
+  safeSendFile(res, CONFIG.caCertPath, 'ca.crt');
 });
 
 // 启动 Web 服务
