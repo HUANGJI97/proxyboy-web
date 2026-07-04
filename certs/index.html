@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下载 CA 证书 - 代理抓包服务</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 50px 40px;
+            text-align: center;
+        }
+        
+        .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #1f2937;
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #6b7280;
+            font-size: 16px;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        
+        .cert-info {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+        
+        .cert-info h3 {
+            color: #374151;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .info-item {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #6b7280;
+            font-size: 14px;
+            width: 120px;
+            flex-shrink: 0;
+        }
+        
+        .info-value {
+            color: #1f2937;
+            font-size: 14px;
+            font-weight: 500;
+            word-break: break-all;
+        }
+        
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px 40px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            margin-bottom: 30px;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .download-btn:active {
+            transform: translateY(0);
+        }
+        
+        .steps {
+            text-align: left;
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 20px 25px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        
+        .steps h3 {
+            color: #92400e;
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .step-platform {
+            margin-bottom: 20px;
+        }
+        
+        .step-platform h4 {
+            color: #78350f;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .step-platform ol {
+            margin-left: 20px;
+            color: #78350f;
+            line-height: 1.8;
+        }
+        
+        .step-platform li {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .step-platform li strong {
+            color: #92400e;
+        }
+        
+        .ios-detail {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #1e40af;
+            line-height: 1.6;
+        }
+        
+        .ios-detail strong {
+            color: #1e3a8a;
+        }
+        
+        .warning {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        
+        .warning h4 {
+            color: #991b1b;
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .warning p {
+            color: #7f1d1d;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            color: #9ca3af;
+            font-size: 13px;
+        }
+        
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 640px) {
+            .container {
+                padding: 40px 25px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .download-btn {
+                padding: 15px 30px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">📜</div>
+        
+        <h1>下载 CA 证书</h1>
+        <p class="subtitle">
+            安装此证书到客户端，以启用 HTTPS 流量解密功能
+        </p>
+        
+        <div class="cert-info">
+            <h3>📋 证书信息</h3>
+            <div class="info-item">
+                <span class="info-label">证书名称：</span>
+                <span class="info-value">ProxySniffer CA</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">颁发者：</span>
+                <span class="info-value">ProxySniffer Root CA</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">有效期至：</span>
+                <span class="info-value">2036-07-04</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">证书类型：</span>
+                <span class="info-value">根证书颁发机构 (CA)</span>
+            </div>
+        </div>
+        
+        <a href="ca.crt" download="ProxySniffer_CA.crt" class="download-btn">
+            <span style="font-size: 24px;">⬇️</span>
+            <span>下载 CA 证书</span>
+        </a>
+        
+        <div class="steps">
+            <h3>📖 安装步骤</h3>
+            
+            <div class="step-platform">
+                <h4>📱 iOS (iPhone/iPad) 详细步骤</h4>
+                <ol>
+                    <li><strong>下载证书</strong>：点击上方按钮下载 <code>ca.crt</code></li>
+                    <li><strong>发送证书到 iOS 设备</strong>：
+                        <br>方法1：通过 <strong>AirDrop</strong> 发送到 iPhone/iPad
+                        <br>方法2：通过 <strong>邮件</strong> 发送附件
+                        <br>方法3：访问 <code>http://115.159.196.184:8888</code> 直接下载
+                    </li>
+                    <li><strong>安装描述文件</strong>：
+                        <br>• 打开 <strong>设置</strong> → <strong>通用</strong>
+                        <br>• 找到 <strong>"VPN与设备管理"</strong> 或 <strong>"描述文件"</strong>
+                        <br>• 点击 <strong>ProxySniffer CA</strong>
+                        <br>• 点击右上角 <strong>"安装"</strong>
+                        <br>• 输入 <strong>设备密码</strong>
+                        <br>• 点击 <strong>"安装"</strong> 确认
+                    </li>
+                    <li><strong>⚠️ 启用完全信任</strong>（重要！）：
+                        <br>• 打开 <strong>设置</strong> → <strong>通用</strong>
+                        <br>• 滑到最下方，点击 <strong>"关于本机"</strong>
+                        <br>• 找到 <strong>"证书信任设置"</strong> 并点击
+                        <br>• 找到 <strong>ProxySniffer CA</strong>
+                        <br>• 打开右侧开关
+                        <br>• 弹出警告，点击 <strong>"继续"</strong>
+                    </li>
+                    <li><strong>配置代理</strong>：
+                        <br>• 打开 <strong>设置</strong> → <strong>Wi-Fi</strong>
+                        <br>• 点击当前连接的 Wi-Fi 右侧的 <strong>ⓘ 图标</strong>
+                        <br>• 滑到最下方，点击 <strong>"配置代理"</strong>
+                        <br>• 选择 <strong>"手动"</strong>
+                        <br>• 服务器：<code>115.159.196.184</code>
+                        <br>• 端口：<code>8080</code>
+                        <br>• 点击右上角 <strong>"存储"</strong>
+                    </li>
+                    <li><strong>测试</strong>：打开 Safari，访问 <code>https://example.com</code>，如果能正常访问说明配置成功</li>
+                </ol>
+                
+                <div class="ios-detail">
+                    <strong>⚠️ 常见问题：</strong>
+                    <br><br>
+                    <strong>Q1: 找不到"描述文件"？</strong>
+                    <br>A: iOS 16+ 路径：设置 → 通用 → VPN与设备管理
+                    <br><br>
+                    <strong>Q2: 安装后还是无法解密 HTTPS？</strong>
+                    <br>A: 必须完成第4步"启用完全信任"！这是最容易遗漏的步骤。
+                    <br><br>
+                    <strong>Q3: 启用完全信任时提示"无法验证"？</strong>
+                    <br>A: 这是正常的，因为是自签名证书。点击"继续"即可。
+                    <br><br>
+                    <strong>Q4: Safari 显示"无法连接"？</strong>
+                    <br>A: 检查代理地址和端口是否正确，确保代理服务正在运行。
+                    <br><br>
+                    <strong>Q5: 如何卸载证书？</strong>
+                    <br>A: 设置 → 通用 → VPN与设备管理 → 点击证书 → 删除描述文件
+                </div>
+            </div>
+            
+            <div class="step-platform">
+                <h4>🖥️ Windows</h4>
+                <ol>
+                    <li>点击下载的 <code>ca.crt</code> 文件</li>
+                    <li>点击 <strong>"安装证书"</strong></li>
+                    <li>选择 <strong>"当前用户"</strong> 或 <strong>"本地计算机"</strong></li>
+                    <li>选择 <strong>"将所有证书放入下列存储"</strong></li>
+                    <li>点击 <strong>"浏览"</strong>，选择 <strong>"受信任的根证书颁发机构"</strong></li>
+                    <li>下一步 → 完成 → 弹出警告点击 <strong>"是"</strong></li>
+                </ol>
+            </div>
+            
+            <div class="step-platform">
+                <h4>🍎 macOS</h4>
+                <ol>
+                    <li>双击 <code>ca.crt</code> 文件，会自动打开"钥匙串访问"</li>
+                    <li>选择 <strong>"系统"</strong> 或 <strong>"登录"</strong> 钥匙串</li>
+                    <li>点击 <strong>"添加"</strong></li>
+                    <li>打开 <strong>"钥匙串访问"</strong> 应用</li>
+                    <li>左侧选择钥匙串 → 找到 <strong>ProxySniffer CA</strong></li>
+                    <li>双击证书 → 展开 <strong>"信任"</strong> → 选择 <strong>"始终信任"</strong></li>
+                </ol>
+            </div>
+            
+            <div class="step-platform">
+                <h4>🤖 Android</h4>
+                <ol>
+                    <li>设置 → 安全 → 加密与凭据 → <strong>"安装证书"</strong> → CA 证书</li>
+                    <li>选择下载的 <code>ca.crt</code></li>
+                    <li>命名：<code>ProxySniffer CA</code> → 确定</li>
+                    <li>设置 → Wi-Fi → 长按当前 Wi-Fi → 修改网络</li>
+                    <li>高级选项 → 代理 → <strong>"手动"</strong></li>
+                    <li>代理服务器：<code>115.159.196.184</code> 端口：<code>8080</code></li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="warning">
+            <h4>⚠️ 安全提醒</h4>
+            <p>
+                1. 此证书仅用于授权的安全测试环境<br>
+                2. 请勿在生产环境未经授权使用<br>
+                3. 证书私钥请妥善保管，不要泄露<br>
+                4. 安装此证书后，代理可以解密所有 HTTPS 流量<br>
+                5. iOS 设备必须启用"完全信任"，否则无法解密 HTTPS
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>代理服务地址: <strong>115.159.196.184:8080</strong></p>
+            <p style="margin-top: 10px;">
+                <a href="http://115.159.196.184:3000">← 返回管理端</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

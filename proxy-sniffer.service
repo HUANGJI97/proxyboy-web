@@ -1,0 +1,23 @@
+[Unit]
+Description=HTTP/HTTPS Proxy Sniffer
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/.openclaw/workspace/proxy-server
+ExecStart=/usr/bin/node /home/ubuntu/.openclaw/workspace/proxy-server/server.js start
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# 环境变量（可选）
+# Environment="NODE_ENV=production"
+
+# 安全设置（可选）
+# NoNewPrivileges=true
+# PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

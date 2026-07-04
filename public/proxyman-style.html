@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProxySniffer - Proxyman Style</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Text', sans-serif; 
+            background: #1e1e1e; 
+            color: #d4d4d4; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* 顶部工具栏 */
+        .toolbar {
+            background: #2d2d30;
+            padding: 8px 16px;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .toolbar h1 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #569cd6;
+            margin-right: 20px;
+        }
+        .search-box {
+            flex: 1;
+            max-width: 500px;
+            position: relative;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 6px 12px 6px 32px;
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 6px;
+            color: #d4d4d4;
+            font-size: 13px;
+        }
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+        }
+        .btn {
+            padding: 6px 12px;
+            background: #0e639c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #1177bb; }
+        .btn-danger { background: #c72e2e; }
+        .btn-danger:hover { background: #e51400; }
+        
+        /* 主容器 */
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        /* 左侧请求列表 */
+        .request-list {
+            width: 450px;
+            background: #252526;
+            border-right: 1px solid #3e3e42;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .list-header {
+            padding: 8px 12px;
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+            font-size: 12px;
+            color: #858585;
+            display: flex;
+            justify-content: space-between;
+        }
+        .list-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .request-item {
+            padding: 10px 12px;
+            border-bottom: 1px solid #2d2d30;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .request-item:hover { background: #2a2d2e; }
+        .request-item.selected { background: #094771; }
+        .request-item .method {
+            font-weight: 600;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-right: 8px;
+            display: inline-block;
+            min-width: 50px;
+            text-align: center;
+        }
+        .method.GET { background: #61affe; color: white; }
+        .method.POST { background: #49cc90; color: white; }
+        .method.PUT { background: #fca130; color: white; }
+        .method.DELETE { background: #f93e3e; color: white; }
+        .method.HTTPS { background: #9c27b0; color: white; }
+        .request-item .url {
+            font-size: 13px;
+            color: #d4d4d4;
+            margin: 4px 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .request-item .meta {
+            font-size: 11px;
+            color: #858585;
+            display: flex;
+            gap: 12px;
+        }
+        .request-item .client-ip {
+            font-size: 10px;
+            color: #858585;
+            margin-top: 2px;
+        }
+        
+        /* 分组样式 */
+        .group-header {
+            padding: 8px 12px;
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+            font-size: 12px;
+            font-weight: 600;
+            color: #569cd6;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+        }
+        .group-header:hover {
+            background: #3e3e42;
+        }
+        .group-header .arrow {
+            transition: transform 0.2s;
+        }
+        .group-header.collapsed .arrow {
+            transform: rotate(-90deg);
+        }
+        .group-count {
+            margin-left: auto;
+            background: #3e3e42;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            color: #858585;
+        }
+        .group-items {
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .group-items.collapsed {
+            max-height: 0 !important;
+        }
+        .status-code {
+            font-weight: 600;
+        }
+        .status-code.success { color: #4ec9b0; }
+        .status-code.error { color: #f44747; }
+        
+        /* 右侧详情面板 */
+        .detail-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .detail-tabs {
+            display: flex;
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+            padding: 0 12px;
+        }
+        .tab {
+            padding: 10px 16px;
+            font-size: 13px;
+            color: #858585;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: #d4d4d4; }
+        .tab.active {
+            color: #569cd6;
+            border-bottom-color: #569cd6;
+        }
+        .detail-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        
+        /* 详情区域样式 */
+        .section {
+            margin-bottom: 24px;
+        }
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #569cd6;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .info-table tr { border-bottom: 1px solid #2d2d30; }
+        .info-table tr:hover { background: #2a2d2e; }
+        .info-table td {
+            padding: 8px 12px;
+        }
+        .info-table td:first-child {
+            color: #9cdcfe;
+            width: 150px;
+            font-weight: 500;
+        }
+        .info-table td:last-child {
+            color: #ce9178;
+            word-break: break-all;
+        }
+        
+        /* JSON 展示 */
+        .json-viewer {
+            background: #1e1e1e;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .json-key { color: #9cdcfe; }
+        .json-string { color: #ce9178; }
+        .json-number { color: #b5cea8; }
+        .json-boolean { color: #569cd6; }
+        .json-null { color: #858585; }
+        
+        /* 空状态 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #858585;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-state .text { font-size: 14px; }
+        
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: #1e1e1e; }
+        ::-webkit-scrollbar-thumb { background: #424242; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        /* 复制按钮 */
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 4px 8px;
+            background: #3c3c3c;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #d4d4d4;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .copy-btn:hover { background: #4c4c4c; }
+        .code-block {
+            position: relative;
+            background: #1e1e1e;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: 'SF Mono', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    
+/* ========== 移动端适配 ========== */
+
+/* 平板设备 (<= 1024px) */
+@media (max-width: 1024px) {
+    .main-container {
+        flex-direction: column;
+    }
+    
+    .request-list {
+        width: 100%;
+        height: 50vh;
+        border-right: none;
+        border-bottom: 1px solid #3e3e42;
+    }
+    
+    .detail-panel {
+        height: 50vh;
+    }
+    
+    .toolbar {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .toolbar h1 {
+        font-size: 12px;
+        margin-right: 10px;
+    }
+    
+    .search-box {
+        max-width: 100%;
+        order: 10;
+        flex-basis: 100%;
+    }
+    
+    .btn {
+        padding: 5px 10px;
+        font-size: 11px;
+    }
+}
+
+/* 手机设备 (<= 768px) */
+@media (max-width: 768px) {
+    .toolbar {
+        padding: 6px 10px;
+    }
+    
+    .toolbar h1 {
+        font-size: 11px;
+        margin-right: 8px;
+    }
+    
+    .btn {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+    
+    .request-list {
+        height: 40vh;
+    }
+    
+    .detail-panel {
+        height: 60vh;
+    }
+    
+    .request-item {
+        padding: 8px 10px;
+    }
+    
+    .request-item .url {
+        font-size: 11px;
+    }
+    
+    .request-item .meta {
+        font-size: 10px;
+    }
+    
+    .detail-tabs {
+        padding: 0 8px;
+    }
+    
+    .tab {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+    
+    .detail-content {
+        padding: 12px;
+    }
+    
+    .section-title {
+        font-size: 11px;
+    }
+    
+    .info-table {
+        font-size: 11px;
+    }
+    
+    .info-table td {
+        padding: 5px 8px;
+    }
+    
+    .json-viewer, .code-block {
+        font-size: 11px;
+        padding: 10px;
+    }
+}
+
+/* 小屏手机 (<= 480px) */
+@media (max-width: 480px) {
+    .toolbar h1 {
+        display: none;
+    }
+    
+    .btn {
+        padding: 4px 6px;
+        font-size: 9px;
+    }
+    
+    .request-item .method {
+        font-size: 9px;
+        padding: 1px 3px;
+        min-width: 35px;
+    }
+    
+    .status-code {
+        font-size: 10px;
+    }
+    
+    .detail-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    .tab {
+        padding: 5px 8px;
+        font-size: 10px;
+    }
+    
+    .request-item .url {
+        font-size: 10px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+</style>
+</head>
+<body>
+    <div class="toolbar">
+        <h1>🔍 ProxySniffer</h1>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Filter by URL, method, status..." oninput="filterRequests()">
+        </div>
+        <button class="btn" id="groupToggle" onclick="toggleGrouping()">📱 Group by IP</button>
+        <button class="btn" onclick="exportAsCurl()">📋 Copy as cURL</button>
+        <button class="btn btn-danger" onclick="clearLogs()">🗑️ Clear</button>
+    </div>
+    
+    <div class="main-container">
+        <div class="request-list">
+            <div class="list-header">
+                <span>Requests</span>
+                <span id="requestCount">0 items</span>
+            </div>
+            <div class="list-content" id="requestList"></div>
+        </div>
+        
+        <div class="detail-panel">
+            <div class="detail-tabs">
+                <div class="tab active" onclick="switchTab('overview')">Overview</div>
+                <div class="tab" onclick="switchTab('request')">Request</div>
+                <div class="tab" onclick="switchTab('response')">Response</div>
+                <div class="tab" onclick="switchTab('raw')">Raw Data</div>
+            </div>
+            <div class="detail-content" id="detailContent">
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    <div class="text">Select a request to view details</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let logs = [];
+        let selectedIndex = -1;
+        let currentTab = 'overview';
+        let groupByIp = true;  // 默认按 IP 分组
+        let collapsedGroups = new Set();  // 记录折叠的分组
+        
+        // 加载日志
+        async function loadLogs() {
+            try {
+                // 只加载最近 100 条，避免页面卡死
+                const res = await fetch('/api/logs?limit=100');
+                const data = await res.json();
+                logs = data.logs || [];
+                renderList();
+                updateCount(data);
+                
+                // 显示加载提示
+                if (data.total > data.loaded) {
+                    console.log(`已加载 ${data.loaded} 条，共 ${data.total} 条。只显示最近 ${data.limit} 条。`);
+                }
+            } catch (e) {
+                console.error('Failed to load logs:', e);
+            }
+        }
+        
+        // 切换分组模式
+        function toggleGrouping() {
+            groupByIp = !groupByIp;
+            const btn = document.getElementById('groupToggle');
+            btn.textContent = groupByIp ? '📱 Ungroup' : '📱 Group by IP';
+            btn.style.background = groupByIp ? '#1177bb' : '#0e639c';
+            renderList();
+        }
+        
+        // 初始化按钮状态
+        window.addEventListener('load', () => {
+            const btn = document.getElementById('groupToggle');
+            btn.textContent = '📱 Ungroup';
+            btn.style.background = '#1177bb';
+        });
+        
+        // 切换分组折叠状态
+        function toggleGroup(ip) {
+            if (collapsedGroups.has(ip)) {
+                collapsedGroups.delete(ip);
+            } else {
+                collapsedGroups.add(ip);
+            }
+            renderList();
+        }
+        
+        // 渲染列表
+        function renderList() {
+            const list = document.getElementById('requestList');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            
+            const filtered = logs.filter(log => {
+                if (!search) return true;
+                return (log.url || '').toLowerCase().includes(search) ||
+                       (log.method || '').toLowerCase().includes(search) ||
+                       (log.type || '').toLowerCase().includes(search);
+            });
+            
+            // 如果启用分组，按客户端 IP 分组
+            if (groupByIp) {
+                const groups = {};
+                filtered.forEach((log, idx) => {
+                    const ip = log.clientIp || 'Unknown';
+                    if (!groups[ip]) groups[ip] = [];
+                    groups[ip].push({ log, idx: logs.indexOf(log) });
+                });
+                
+                // 渲染分组
+                list.innerHTML = Object.entries(groups).map(([ip, items]) => {
+                    const isCollapsed = collapsedGroups.has(ip);
+                    return `
+                        <div class="group-header ${isCollapsed ? 'collapsed' : ''}" onclick="toggleGroup('${ip}')">
+                            <span class="arrow">▼</span>
+                            <span>📱 ${ip}</span>
+                            <span class="group-count">${items.length} requests</span>
+                        </div>
+                        <div class="group-items ${isCollapsed ? 'collapsed' : ''}" style="max-height: ${isCollapsed ? '0' : items.length * 100 + 'px'}">
+                            ${items.map(({ log, idx }) => renderRequestItem(log, idx)).join('')}
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                // 普通列表模式
+                list.innerHTML = filtered.map((log, idx) => {
+                    const realIdx = logs.indexOf(log);
+                    return renderRequestItem(log, realIdx);
+                }).join('');
+            }
+        }
+        
+        // 渲染单个请求项
+        function renderRequestItem(log, realIdx) {
+            const method = log.method || (log.url?.startsWith('https') ? 'HTTPS' : 'HTTP');
+            const url = log.url || '(no url)';
+            const status = log.responseStatus || '-';
+            const statusClass = status >= 200 && status < 300 ? 'success' : 'error';
+            const time = log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : '';
+            const clientIp = log.clientIp ? `<div class="client-ip">📱 ${log.clientIp}</div>` : '';
+            
+            return `
+                <div class="request-item ${selectedIndex === realIdx ? 'selected' : ''}" 
+                     onclick="selectRequest(${realIdx})">
+                    <div>
+                        <span class="method ${method}">${method}</span>
+                        <span class="status-code ${statusClass}">${status}</span>
+                    </div>
+                    <div class="url">${url}</div>
+                    <div class="meta">
+                        <span>${time}</span>
+                        <span>${formatSize(calculateSize(log))}</span>
+                    </div>
+                    ${clientIp}
+                </div>
+            `;
+        }
+        
+        // 选择请求
+        function selectRequest(idx) {
+            selectedIndex = idx;
+            renderList();
+            renderDetail();
+        }
+        
+        // 渲染详情
+        function renderDetail() {
+            if (selectedIndex < 0 || selectedIndex >= logs.length) return;
+            
+            const log = logs[selectedIndex];
+            const content = document.getElementById('detailContent');
+            
+            switch(currentTab) {
+                case 'overview':
+                    content.innerHTML = renderOverview(log);
+                    break;
+                case 'request':
+                    content.innerHTML = renderRequest(log);
+                    break;
+                case 'response':
+                    content.innerHTML = renderResponse(log);
+                    break;
+                case 'raw':
+                    content.innerHTML = renderRaw(log);
+                    break;
+            }
+        }
+        
+        // Overview 标签
+        function renderOverview(log) {
+            return `
+                <div class="section">
+                    <div class="section-title">General</div>
+                    <table class="info-table">
+                        <tr><td>Request URL</td><td>${log.url || '-'}</td></tr>
+                        <tr><td>Method</td><td>${log.method || '-'}</td></tr>
+                        <tr><td>Status Code</td><td>${log.responseStatus || '-'}</td></tr>
+                        <tr><td>Protocol</td><td>${log.url?.startsWith('https') ? 'HTTPS' : 'HTTP'}</td></tr>
+                    </table>
+                </div>
+                
+                ${log.clientInfo ? `
+                <div class="section">
+                    <div class="section-title">Client Info</div>
+                    <table class="info-table">
+                        <tr><td>IP Address</td><td>📱 ${log.clientInfo.ip || '-'}</td></tr>
+                        ${log.clientInfo.userAgent ? `<tr><td>User Agent</td><td>${escapeHtml(log.clientInfo.userAgent)}</td></tr>` : ''}
+                        ${log.clientInfo.referer ? `<tr><td>Referer</td><td>${escapeHtml(log.clientInfo.referer)}</td></tr>` : ''}
+                        ${log.clientInfo.origin ? `<tr><td>Origin</td><td>${escapeHtml(log.clientInfo.origin)}</td></tr>` : ''}
+                        ${log.clientInfo.acceptLanguage ? `<tr><td>Language</td><td>${log.clientInfo.acceptLanguage}</td></tr>` : ''}
+                        ${log.clientInfo.contentType ? `<tr><td>Content Type</td><td>${log.clientInfo.contentType}</td></tr>` : ''}
+                    </table>
+                </div>
+                ` : ''}
+                
+                <div class="section">
+                    <div class="section-title">Request Headers</div>
+                    ${renderHeadersTable(log.requestHeaders)}
+                </div>
+                
+                <div class="section">
+                    <div class="section-title">Query Parameters</div>
+                    ${renderQueryParams(log.url)}
+                </div>
+                
+                ${log.requestBody ? `
+                <div class="section">
+                    <div class="section-title">Request Body</div>
+                    <div class="json-viewer">${syntaxHighlight(log.requestBody)}</div>
+                </div>
+                ` : ''}
+            `;
+        }
+        
+        // Request 标签
+        function renderRequest(log) {
+            return `
+                ${log.requestHeaders ? `
+                <div class="section">
+                    <div class="section-title">Headers</div>
+                    ${renderHeadersTable(log.requestHeaders)}
+                </div>
+                ` : ''}
+                
+                ${log.requestBody ? `
+                <div class="section">
+                    <div class="section-title">Body</div>
+                    <div class="json-viewer">${syntaxHighlight(log.requestBody)}</div>
+                </div>
+                ` : ''}
+                
+                ${log.clientData ? `
+                <div class="section">
+                    <div class="section-title">Raw Client Data</div>
+                    <div class="code-block">${escapeHtml(log.clientData)}</div>
+                </div>
+                ` : ''}
+            `;
+        }
+        
+        // Response 标签
+        function renderResponse(log) {
+            return `
+                ${log.responseHeaders ? `
+                <div class="section">
+                    <div class="section-title">Headers</div>
+                    ${renderHeadersTable(log.responseHeaders)}
+                </div>
+                ` : ''}
+                
+                ${log.responseBody ? `
+                <div class="section">
+                    <div class="section-title">Body</div>
+                    <div class="json-viewer">${syntaxHighlight(log.responseBody)}</div>
+                </div>
+                ` : ''}
+                
+                ${log.serverData ? `
+                <div class="section">
+                    <div class="section-title">Raw Server Data</div>
+                    <div class="code-block">${escapeHtml(log.serverData)}</div>
+                </div>
+                ` : ''}
+            `;
+        }
+        
+        // Raw Data 标签
+        function renderRaw(log) {
+            return `
+                <div class="section">
+                    <div class="section-title">Full Request Log</div>
+                    <div class="code-block" style="position: relative;">
+                        <button class="copy-btn" onclick="copyRawData()">Copy</button>
+                        <pre>${escapeHtml(JSON.stringify(log, null, 2))}</pre>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 渲染请求头表格
+        function renderHeadersTable(headers) {
+            if (!headers || typeof headers !== 'object') {
+                return '<div style="color: #858585; font-size: 13px;">No headers</div>';
+            }
+            
+            return `
+                <table class="info-table">
+                    ${Object.entries(headers).map(([key, value]) => `
+                        <tr>
+                            <td>${escapeHtml(key)}</td>
+                            <td>${escapeHtml(value)}</td>
+                        </tr>
+                    `).join('')}
+                </table>
+            `;
+        }
+        
+        // 渲染查询参数
+        function renderQueryParams(url) {
+            if (!url) return '<div style="color: #858585; font-size: 13px;">No parameters</div>';
+            
+            try {
+                const params = new URL(url).searchParams;
+                if ([...params].length === 0) {
+                    return '<div style="color: #858585; font-size: 13px;">No parameters</div>';
+                }
+                
+                return `
+                    <table class="info-table">
+                        ${[...params].map(([key, value]) => `
+                            <tr>
+                                <td>${escapeHtml(key)}</td>
+                                <td>${escapeHtml(value)}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                `;
+            } catch {
+                return '<div style="color: #858585; font-size: 13px;">Invalid URL</div>';
+            }
+        }
+        
+        // 切换标签
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            renderDetail();
+        }
+        
+        // 过滤请求
+        function filterRequests() {
+            renderList();
+        }
+        
+        // 导出为 cURL
+        function exportAsCurl() {
+            if (selectedIndex < 0) {
+                alert('Please select a request first');
+                return;
+            }
+            
+            const log = logs[selectedIndex];
+            let curl = `curl -X ${log.method || 'GET'}`;
+            
+            if (log.requestHeaders) {
+                Object.entries(log.requestHeaders).forEach(([key, value]) => {
+                    curl += ` -H "${key}: ${value}"`;
+                });
+            }
+            
+            if (log.requestBody) {
+                curl += ` -d '${log.requestBody.replace(/'/g, "'\\''")}'`;
+            }
+            
+            curl += ` "${log.url}"`;
+            
+            navigator.clipboard.writeText(curl).then(() => {
+                alert('cURL command copied to clipboard!');
+            });
+        }
+        
+        // 清空日志
+        async function clearLogs() {
+            if (!confirm('Clear all logs?')) return;
+            
+            try {
+                await fetch('/api/logs/clear', { method: 'POST' });
+                logs = [];
+                selectedIndex = -1;
+                renderList();
+                document.getElementById('detailContent').innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📭</div>
+                        <div class="text">Select a request to view details</div>
+                    </div>
+                `;
+                updateCount();
+            } catch (e) {
+                console.error('Failed to clear logs:', e);
+            }
+        }
+        
+        // 更新计数
+        function updateCount(data) {
+            const count = data ? data.total : logs.length;
+            const loaded = data ? data.loaded : logs.length;
+            const text = data && data.total > data.loaded 
+                ? `${loaded} / ${count} items (显示最近 ${data.limit} 条)`
+                : `${count} items`;
+            document.getElementById('requestCount').textContent = text;
+        }
+        
+        // 工具函数
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+        
+        function calculateSize(log) {
+            let size = 0;
+            if (log.requestBody) size += log.requestBody.length;
+            if (log.responseBody) size += log.responseBody.length;
+            if (log.clientData) size += log.clientData.length;
+            if (log.serverData) size += log.serverData.length;
+            return size;
+        }
+        
+        function syntaxHighlight(json) {
+            if (typeof json !== 'string') {
+                json = JSON.stringify(json, null, 2);
+            }
+            
+            return json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                    let cls = 'json-number';
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) {
+                            cls = 'json-key';
+                        } else {
+                            cls = 'json-string';
+                        }
+                    } else if (/true|false/.test(match)) {
+                        cls = 'json-boolean';
+                    } else if (/null/.test(match)) {
+                        cls = 'json-null';
+                    }
+                    return '<span class="' + cls + '">' + match + '</span>';
+                });
+        }
+        
+        function copyRawData() {
+            const log = logs[selectedIndex];
+            const raw = JSON.stringify(log, null, 2);
+            navigator.clipboard.writeText(raw).then(() => {
+                alert('Raw data copied!');
+            });
+        }
+        
+        // 自动刷新
+        setInterval(loadLogs, 3000);
+        loadLogs();
+    </script>
+</body>
+</html>

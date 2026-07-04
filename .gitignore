@@ -1,0 +1,41 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# 日志文件
+logs/
+*.log
+/tmp/
+
+# 证书和密钥（保密！）
+certs/ca.key
+*.pem
+*.key
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 构建输出
+dist/
+build/
+*.o
+*.so
+
+# 测试
+coverage/
+.nyc_output/
+
+# 临时文件
+*.tmp
+*.bak
+*.bak2
